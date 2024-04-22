@@ -6,6 +6,7 @@ import numpy as np
 from vdb.chem.curate.base import CurationIssue, CurationNote
 from vdb.chem.curate.steps import CURATION_LITERAL_TO_FUNC, CURATION_NAME_TO_ISSUE_ENUM
 from vdb.chem.utils import to_smis
+from vdb.data.base import SmilesVector, MolVector, LabelVector
 from vdb.logger import setup_logger
 
 DEFAULT_CURATION_STEPS = ["missing_label", "rdkit", 'canonicalize']
@@ -249,7 +250,7 @@ class CurationWorkflow:
             curation_dict.update(_curr_dict)
         self._logger.info(f"curation workflow finished in {str(datetime.now() - t0)}")
         self._logger.info(f"{len(curation_dict.issue_values())} out of {len(smiles)} datapoints failed curation")
-        return smiles, mols, labels, curation_dict
+        return SmilesVector(smiles), MolVector(mols), LabelVector(labels), curation_dict
 
     def get_steps(self):
         return list(self._curation_steps.keys())

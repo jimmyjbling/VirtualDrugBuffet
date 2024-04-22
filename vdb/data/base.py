@@ -279,3 +279,27 @@ class _BaseDataset(_Base, abc.ABC):
     @abc.abstractmethod
     def __iter__(self):
         raise NotImplemented
+
+
+class _BaseCurated(abc.ABC):
+    def __init__(self, *args, **kwargs):
+        super().__init__()
+        self._curation_workflow = None
+        self._cur_dict = None
+
+    def get_curation_dict(self):
+        return self._cur_dict
+
+    def get_passed_idx(self):
+        return self._cur_dict.get_passed()
+
+    def get_failed_idx(self):
+        return self._cur_dict.get_failed()
+
+    @abc.abstractmethod
+    def to_curation_csv(self, out_file: str):
+        raise NotImplemented
+
+    @abc.abstractmethod
+    def to_dataset(self):
+        raise NotImplemented

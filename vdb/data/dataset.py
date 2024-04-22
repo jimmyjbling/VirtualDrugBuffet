@@ -1,9 +1,10 @@
-import numpy as np
 import numpy.typing as npt
 
 from rdkit.Chem import Mol
 
-from vdb.data.base import _BaseDataset, _BaseSmiles, _BaseLabeled, SmilesVector, MolVector, NameVector, LabelVector
+from vdb.chem.curate.workflow import CurationWorkflow, DEFAULT_CURATION_STEPS
+from vdb.data.base import (_BaseDataset, _BaseSmiles, _BaseLabeled, SmilesVector,
+                           MolVector, NameVector, LabelVector, _BaseCurated)
 
 
 class SmilesDataset(_BaseDataset, _BaseSmiles):
@@ -249,7 +250,7 @@ class LabeledSmilesDataset(SmilesDataset, _BaseLabeled):
                                            mols=self._mols, curation_workflow=curation_workflow)
 
     def to_csv(self, file_loc, header: bool = True, delimiter: str = ","):
-        f = open(file_loc, "w").write(self.to_csv_str(header=header, delimiter=delimiter))
+        open(file_loc, "w").write(self.to_csv_str(header=header, delimiter=delimiter))
 
     def to_csv_str(self, header: bool = True, delimiter: str = ","):
         _str = ""
@@ -258,3 +259,118 @@ class LabeledSmilesDataset(SmilesDataset, _BaseLabeled):
         for smi, _, name, label, _ in self:
             _str += f"{smi}{delimiter}{name}{delimiter}{label}\n"
         return _str
+
+
+class CuratedSmilesDataset(SmilesDataset, _BaseCurated):
+    def __init__(self, smiles: SmilesVector or list[str] or npt.NDArray,
+                 names: NameVector or list[str] or npt.NDArray = None,
+                 mols: MolVector or list[Mol] or npt.NDArray = None,
+                 curation_workflow: CurationWorkflow = None):
+        super().__init__(smiles=smiles, names=names, mols=mols, generate_mols=False)
+
+        self._curation_workflow = curation_workflow
+
+        if self._curation_workflow is None:
+            self._curation_workflow = CurationWorkflow(curation_steps=DEFAULT_CURATION_STEPS)
+
+        self._all_smi, self._all_mol, _, self._cur_dict = self._curation_workflow.run_workflow(self._smiles, self._mols)
+        self._all_name = self._names.copy()
+
+        self._smiles = SmilesVector(self._all_smi[self._cur_dict.get_passed()].copy())
+        self._mols = MolVector(self._all_mol[self._cur_dict.get_passed()].copy())
+        self._name = NameVector(self._all_name[self._cur_dict.get_passed()].copy())
+
+    def __add__(self, other):
+        raise NotImplementedError("adding not defined on curated dataset objects")
+
+    def get_all_smiles(self):
+        return self._all_smi.get_smiles()
+
+    def get_all_mols(self):
+        return self._all_mol.get_mols()
+
+    def get_all_names(self):
+        return self._all_name.get_names()
+
+    def to_curation_csv(self, out_file: str):
+        open(out_file, "w").write(self.to_curation_csv_str(header=True))
+
+    def to_curation_csv_str(self, header: bool = True) -> str:
+        _str = ""
+        if header:
+            _str += "SMILES,Name,Note,Issue\n"
+        for i in range(len(self._all_smi)):
+            note = self._cur_dict.get_note(i)
+            issue = self._cur_dict.get_issue(i)
+            _str += (f"{self._all_smi[i]},"
+                     f"{self._all_name[i]},"
+                     f"{str(note[0]) if note else ''},"
+                     f"{str(issue[0]) if issue else ''}\n")
+        return _str
+
+    def to_csv_str(self, header: bool = True, delimiter: str = ",") -> str:
+        _str = ""
+        if header:
+            _str += "SMILES,Name\n"
+        for i in range(len(self._smiles)):
+            _str += f"{self._all_smi[i]},{self._all_name[i]}\n"
+        return _str
+
+    def to_dataset(self):
+        return SmilesDataset(smiles=self._smiles, names=self._name, mols=self._mols, generate_mols=False)
+
+
+class CuratedLabeledSmilesDataset(LabeledSmilesDataset, CuratedSmilesDataset):
+    def __init__(self, smiles: SmilesVector or list[str] or npt.NDArray,
+                 labels: LabelVector or list[str] or npt.NDArray,
+                 names: NameVector or list[str] or npt.NDArray = None,
+                 mols: MolVector or list[Mol] or npt.NDArray = None,
+                 curation_workflow: CurationWorkflow = None):
+        super().__init__(smiles=smiles, labels=labels, names=names, mols=mols, generate_mols=False)
+
+        self._curation_workflow = curation_workflow
+
+        if self._curation_workflow is None:
+            self._curation_workflow = CurationWorkflow(curation_steps=DEFAULT_CURATION_STEPS)
+
+        self._all_smi, self._all_mol, self._all_labels, self._cur_dict = (
+            self._curation_workflow.run_workflow(self._smiles, self._mols, self._labels))
+
+        self._all_name = self._names.copy()
+
+        self._smiles = SmilesVector(self._all_smi[self._cur_dict.get_passed()].copy())
+        self._labels = LabelVector(self._all_labels[self._cur_dict.get_passed()].copy())
+        self._mols = MolVector(self._all_mol[self._cur_dict.get_passed()].copy())
+        self._name = NameVector(self._all_name[self._cur_dict.get_passed()].copy())
+
+    def __add__(self, other):
+        raise NotImplementedError("adding not defined on curated dataset objects")
+
+    def get_all_labels(self):
+        return self._all_labels.get_labels()
+
+    def to_curation_csv_str(self, header: bool = True) -> str:
+        _str = ""
+        if header:
+            _str += "SMILES,Name,Label,Note,Issue\n"
+        for i in range(len(self._all_smi)):
+            note = self._cur_dict.get_note(i)
+            issue = self._cur_dict.get_issue(i)
+            _str += (f"{self._all_smi[i]},"
+                     f"{self._all_name[i]},"
+                     f"{self._all_labels[i]},"
+                     f"{str(note[0]) if note else ''},"
+                     f"{str(issue[0]) if issue else ''}\n")
+        return _str
+
+    def to_csv_str(self, header: bool = True, delimiter: str = ",") -> str:
+        _str = ""
+        if header:
+            _str += "SMILES,Name,Label\n"
+        for i in range(len(self._smiles)):
+            _str += f"{self._smiles[i]},{self._names[i]},{self._name[i]}\n"
+        return _str
+
+    def to_dataset(self):
+        return LabeledSmilesDataset(smiles=self._smiles, labels=self._labels, names=self._name,
+                                    mols=self._mols, generate_mols=False)
