@@ -2,7 +2,7 @@ import re
 
 from func_timeout import func_timeout
 
-from rdkit.Chem import Mol, MolFromSmiles, MolToSmiles, AddHs, MolFromSmarts
+from rdkit.Chem import Mol, MolFromSmiles, MolToSmiles, AddHs, MolFromSmarts, RemoveStereochemistry, SanitizeMol
 from rdkit.Chem.Scaffolds import MurckoScaffold
 from rdkit.Chem.rdDistGeom import ETKDGv3, EmbedMolecule
 
@@ -61,6 +61,14 @@ def add_3d(mol: Mol):
 
 def add_hydrogen(mol: Mol):
     return AddHs(mol)
+
+
+def remove_stereochem(mol: Mol):
+    RemoveStereochemistry(mol)
+
+
+def sanitize_mol(mol: Mol):
+    return SanitizeMol(mol)
 
 
 def mol_is_organic(mol):

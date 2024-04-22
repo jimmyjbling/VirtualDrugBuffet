@@ -41,7 +41,7 @@ class CurationFunction(abc.ABC):
         self.labeled: bool = False  # whether the curation function needs labels to run
 
     @abc.abstractmethod
-    def _func(self, chemicals, labels=None, **kwargs):
+    def _func(self, chemicals, labels, **kwargs):
         raise NotImplemented
 
     def __call__(self, *args, **kwargs):
