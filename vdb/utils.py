@@ -1,6 +1,23 @@
 import numpy as np
 
 
+def to_list(obj):
+    if isinstance(obj, list):
+        return obj
+    elif hasattr(obj, 'to_list'):
+        return obj.to_list()
+    elif hasattr(obj, 'tolist'):
+        return obj.tolist()
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif isinstance(obj, str):
+        return [obj]
+    elif not hasattr(obj, "__iter__"):
+        return [obj]
+    else:
+        return list(obj)
+
+
 def isnan(arr):
     """
     Once again, the numpy devs fail me and have a very arbitrary yet somehow strict definition of nan,
