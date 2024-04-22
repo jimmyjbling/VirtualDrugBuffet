@@ -72,6 +72,12 @@ class BaseFPFunc:
     def __call__(self, *args, **kwargs):
         return self.generate_fps(*args, **kwargs)
 
+    def is_binary(self) -> bool:
+        return isinstance(self, BinaryFPFunc)
+
+    def get_dimension(self) -> int:
+        return self._dimension
+
     def generate_fps(self, smis: str or list[str], use_tqdm: bool = False, nan_on_fail: bool = True):
         """
         Generate Fingerprints for a set of smi

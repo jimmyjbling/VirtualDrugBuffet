@@ -6,7 +6,7 @@ import numpy as np
 
 from vdb.utils import to_list
 from vdb.chem.utils import is_mol, to_mol, to_smi
-
+from vdb.chem.fp.base import BaseFPFunc
 
 class _BaseVector:
     def __init__(self, items: list):
@@ -303,3 +303,26 @@ class _BaseCurated(abc.ABC):
     @abc.abstractmethod
     def to_dataset(self):
         raise NotImplemented
+
+
+class _BaseDescriptor(abc.ABC):
+    def __init__(self, *args, **kwargs):
+        super().__init__()
+        self._fp_func: BaseFPFunc = None
+
+    def get_fp_func(self):
+        return self._fp_func
+
+    @abc.abstractmethod
+    def get_fps(self):
+        raise NotImplemented
+
+    @abc.abstractmethod
+    def get_fp_batches(self, batch_size):
+        raise NotImplemented
+
+    def is_binary(self):
+        return self._fp_func.is_binary() if self._fp_func else None
+
+    def fps_size(self):
+        return self._fp_func.get_dimension() if self._fp_func else None

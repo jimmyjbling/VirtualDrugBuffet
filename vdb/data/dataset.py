@@ -1,10 +1,12 @@
+import numpy as np
 import numpy.typing as npt
 
 from rdkit.Chem import Mol
 
+from vdb.chem.fp.base import BaseFPFunc
 from vdb.chem.curate.workflow import CurationWorkflow, DEFAULT_CURATION_STEPS
-from vdb.data.base import (_BaseDataset, _BaseSmiles, _BaseLabeled, SmilesVector,
-                           MolVector, NameVector, LabelVector, _BaseCurated)
+from vdb.data.base import (_BaseDataset, _BaseSmiles, _BaseLabeled, _BaseDescriptor, _BaseCurated,
+                           SmilesVector, MolVector, NameVector, LabelVector, )
 
 
 class SmilesDataset(_BaseDataset, _BaseSmiles):
@@ -146,6 +148,10 @@ class SmilesDataset(_BaseDataset, _BaseSmiles):
             return LabeledSmilesDataset(smiles=self._smiles, mols=self._mols, names=self._names,
                                         labels=labels, generate_mols=False)
 
+    def generate_fp(self, fp_func: BaseFPFunc):
+        return SmilesFpDataset(smiles=self._smiles, mols=self._mols, names=self._names,
+                               fp_func=fp_func, fps=fp_func.generate_fps(self.get_smiles()))
+
     def curate(self, curation_workflow: CurationWorkflow):
         return CuratedSmilesDataset(smiles=self._smiles, names=self._names, mols=self._mols,
                                     curation_workflow=curation_workflow)
@@ -245,6 +251,10 @@ class LabeledSmilesDataset(SmilesDataset, _BaseLabeled):
                        self._labels[i:i + batch_size])
 
     # conversion functions
+    def generate_fp(self, fp_func: BaseFPFunc):
+        return LabeledSmilesFpDataset(smiles=self._smiles, labels=self._labels, mols=self._mols, names=self._names,
+                                      fp_func=fp_func, fps=fp_func.generate_fps(self.get_smiles()))
+
     def curate(self, curation_workflow: CurationWorkflow):
         return CuratedLabeledSmilesDataset(smiles=self._smiles, names=self._names, labels=self._labels,
                                            mols=self._mols, curation_workflow=curation_workflow)
@@ -374,3 +384,94 @@ class CuratedLabeledSmilesDataset(LabeledSmilesDataset, CuratedSmilesDataset):
     def to_dataset(self):
         return LabeledSmilesDataset(smiles=self._smiles, labels=self._labels, names=self._name,
                                     mols=self._mols, generate_mols=False)
+
+
+class SmilesFpDataset(SmilesDataset, _BaseDescriptor):
+    def __init__(self, smiles: SmilesVector or list[str] or npt.NDArray,
+                 fps: npt.NDArray, fp_func: BaseFPFunc = None,
+                 names: NameVector or list[str] or npt.NDArray = None,
+                 mols: MolVector or list[Mol] or npt.NDArray = None,
+                 generate_mols: bool = False):
+
+        super().__init__(smiles, names, mols, generate_mols)
+
+        self._fp_func = fp_func
+
+        if len(fps.shape) == 1:
+            fps = fps.reshape(-1, 1)
+
+        self._fps = fps
+
+    def __add__(self, other):
+        if not isinstance(other, self.__class__):
+            raise ValueError(f"cannot add {other.__class__} to 'SmilesFpDataset' class")
+        if other._fp_func != self._fp_func:
+            raise ValueError("cannot add 'SmilesFpDataset' objects when FpFunc are not equal")
+
+        return SmilesFpDataset(smiles=self._smiles + other._smiles,
+                               names=self._names + other._names,
+                               mols=None if ((other._mols is None) or (self._mols is None))
+                               else self._mols + other._mols,
+                               fps=np.vstack((self._fps, other._fps)),
+                               fp_func=self._fp_func)
+
+    def __iter__(self):
+        if self._mols is None:
+            for smi, name, fp in zip(self._smiles, self._names, self._fps):
+                yield smi, None, name, fp
+        else:
+            for smi, mol, name, fp in zip(self._smiles, self._mols, self._names, self._fps):
+                yield smi, mol, name, fp
+
+    def get_fps(self):
+        return self._fps
+
+    def get_fp_batches(self, batch_size: int):
+        for i in range(0, len(self), batch_size):
+            yield self._fps[i:i + batch_size, :]
+
+    # need to override so it returns the proper class
+    def add_label(self, labels):
+        if len(labels) != len(self._smiles):
+            raise ValueError(f"new Mols must be same size as dataset; new: {len(labels)} curr: {len(self._smiles)}")
+        else:
+            return LabeledSmilesFpDataset(smiles=self._smiles, mols=self._mols, names=self._names,
+                                          labels=labels, fps=self._fps, fp_func=self._fp_func)
+
+
+class LabeledSmilesFpDataset(LabeledSmilesDataset, SmilesFpDataset):
+    def __init__(self, smiles: SmilesVector or list[str] or npt.NDArray,
+                 labels: LabelVector or list[str] or npt.NDArray,
+                 fps: npt.NDArray, fp_func: BaseFPFunc = None,
+                 names: NameVector or list[str] or npt.NDArray = None,
+                 mols: MolVector or list[Mol] or npt.NDArray = None,
+                 generate_mols: bool = False):
+
+        super().__init__(smiles, labels, names, mols, generate_mols)
+
+        self._fp_func = fp_func
+        if len(fps.shape) == 1:
+            fps = fps.reshape(-1, 1)
+        self._fps = fps
+
+    def __add__(self, other):
+        if not isinstance(other, self.__class__):
+            raise ValueError(f"cannot add {other.__class__} to 'SmilesFpDataset' class")
+        if other._fp_func != self._fp_func:
+            raise ValueError("cannot add 'SmilesFpDataset' objects when FpFunc are not equal")
+
+        return LabeledSmilesFpDataset(smiles=self._smiles + other._smiles,
+                                      labels=self._labels + other._labels,
+                                      names=self._names + other._names,
+                                      mols=None if ((other._mols is None) or (self._mols is None))
+                                      else self._mols + other._mols,
+                                      fps=np.vstack((self._fps, other._fps)),
+                                      fp_func=self._fp_func)
+
+    def __iter__(self):
+        if self._mols is None:
+            for smi, name, fp, label in zip(self._smiles, self._names, self._fps, self._labels):
+                yield smi, None, name, fp, label
+        else:
+            for smi, mol, name, fp, label in zip(self._smiles, self._mols, self._names, self._fps, self._labels):
+                yield smi, mol, name, fp, label
