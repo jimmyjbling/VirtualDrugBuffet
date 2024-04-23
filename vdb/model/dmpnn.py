@@ -319,7 +319,7 @@ class BatchMolGraph:
         self.a2a = None  # only needed if using atom messages
 
     def get_components(self) -> tuple[torch.FloatTensor, torch.FloatTensor, torch.LongTensor, torch.LongTensor,
-                                      torch.LongTensor, list[tuple[int, int]], list[tuple[int, int]]]:
+                                torch.LongTensor, list[tuple[int, int]], list[tuple[int, int]]]:
         """
         Returns the components of the BatchMolGraph.
 
@@ -796,8 +796,6 @@ class DirectedMPNNClassifier(BaseEstimator):
         optimizer = torch.optim.Adam([{'params': self.model_object.parameters(),
                                        'lr': init_lr, 'weight_decay': 0}])
 
-        y = self._check_label(y)
-
         # check for nan
         not_nans = ~isnan(x)
         if sum(not_nans) != len(not_nans):
@@ -816,7 +814,7 @@ class DirectedMPNNClassifier(BaseEstimator):
             optimizer=optimizer,
             warmup_epochs=[warmup_epochs],
             total_epochs=[num_epochs],
-            steps_per_epoch=(len(train_x)//batch_size)+1,
+            steps_per_epoch=(len(train_x) // batch_size) + 1,
             init_lr=[init_lr],
             max_lr=[max_lr],
             final_lr=[final_lr]
@@ -825,7 +823,7 @@ class DirectedMPNNClassifier(BaseEstimator):
         best_score = 0
         best_epoch = 0
         patience = 0
-        pbar = tqdm(total=num_epochs*((len(train_x)//batch_size)+1), disable=not use_tqdm, desc="training MPNN")
+        pbar = tqdm(total=num_epochs * ((len(train_x) // batch_size) + 1), disable=not use_tqdm, desc="training MPNN")
         for epoch in range(num_epochs):
             # shuffle training data
             total_loss = 0
