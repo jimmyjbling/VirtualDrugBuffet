@@ -18,6 +18,7 @@ from rdkit import Chem
 from tqdm import tqdm
 
 from vdb.chem.fp.mol_graph import MolGraph, MolGraphFunc, ATOM_FDIM, BOND_FDIM
+from vdb.ml.splitter import StratifiedScaffoldKFold
 from vdb.utils import isnan
 
 
@@ -804,10 +805,7 @@ class DirectedMPNNClassifier(BaseEstimator):
             x = x[not_nans]
             y = y[not_nans]
 
-        splitter = ScaffoldSplit(n_fold=1, train_size=0.9, test_size=0.0)
-        splitter.fit(smiles=[_[0].smiles for _ in x], y=y)
-
-        train_idx, val_idx = next(splitter.training_splits())
+        train_idx, val_idx = next(StratifiedScaffoldKFold(n_splits=10).split([_[0].smiles for _ in x], y=y))
 
         train_x = x[train_idx]
         train_y = y[train_idx]
