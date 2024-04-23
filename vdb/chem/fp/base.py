@@ -3,9 +3,10 @@ import pickle
 from typing import Callable
 
 import numpy as np
+from sklearn.base import BaseEstimator
 from tqdm import tqdm
 
-from vdb.chem.utils import to_mols, to_mol
+from vdb.chem.utils import to_mol
 from vdb.utils import isnan
 
 
@@ -33,9 +34,11 @@ def _handle_fail_nan(fp_func: Callable, dimensions: int = 1, *args, **kwargs):
         return [np.nan]*dimensions
 
 
-class BaseFPFunc:
+class BaseFPFunc(BaseEstimator):
     """
     Base class for all FP functions used in vdb
+    It is a child of the sklearn BaseEstimator to make it compatible with the `Pipeline` API
+    The `fit` function does nothing, while `fit_transform` and `transform` just wrap `generate_fps`
 
     Parameters
     ----------
@@ -112,6 +115,15 @@ class BaseFPFunc:
         pass_bool = ~np.any(isnan(_tmp), axis=1)  # determine which fingerprints failed to generate
 
         return _tmp, pass_bool
+
+    def fit(self, X, y=None):
+        pass
+
+    def fit_transform(self, X, y=None):
+        return self.transform(X, y)
+
+    def transform(self, X, y=None):
+        return self.generate_fps(X)
 
     def save(self, file_path: str):
         pickle.dump(self, open(file_path, "wb"))
