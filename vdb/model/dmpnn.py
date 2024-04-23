@@ -6,6 +6,7 @@ from functools import partial
 
 import torch
 from sklearn.base import BaseEstimator
+from sklearn.pipeline import Pipeline
 from torch import nn
 from torch.optim.lr_scheduler import _LRScheduler
 from torch.utils.data import Dataset
@@ -897,3 +898,16 @@ class DirectedMPNNClassifier(BaseEstimator):
     def predict(self, x, batch_size: int = 50):
         pred_probas = self.predict_proba(x, batch_size=batch_size)
         return (pred_probas > 0.5).astype(int)
+
+
+class PreprocessDirectedMPNNClassifier(Pipeline):
+    def __init__(self, model: DirectedMPNNClassifier, memory: bool = False, verbose: bool = False):
+
+        _steps = [("fp_func", MolGraphFunc), ("model", model)]
+        super().__init__(_steps, memory=memory, verbose=verbose)
+
+    def extract_model(self):
+        return self.steps[-1][1]  # model is always the last step in the pipeline
+
+    def get_fp_func(self):
+        return self.steps[0][1]  # fp_func is always the first step in the pipeline
