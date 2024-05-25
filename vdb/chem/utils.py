@@ -51,6 +51,8 @@ def to_smis(smis):
 
 
 def add_3d(mol: Mol):
+    if mol is None:
+        return None
     mol = AddHs(mol)
     ps = ETKDGv3()
     ps.useRandomCoords = True
@@ -60,18 +62,26 @@ def add_3d(mol: Mol):
 
 
 def add_hydrogen(mol: Mol):
+    if mol is None:
+        return None
     return AddHs(mol)
 
 
 def remove_stereochem(mol: Mol):
+    if mol is None:
+        return None
     RemoveStereochemistry(mol)
 
 
 def sanitize_mol(mol: Mol):
+    if mol is None:
+        return None
     return SanitizeMol(mol)
 
 
 def mol_is_organic(mol):
+    if mol is None:
+        return None
     return not mol.HasSubstructMatch(NON_ORGANIC)
 
 
@@ -80,6 +90,8 @@ def smi_is_organic(smi):
 
 
 def mol_has_boron(mol):
+    if mol is None:
+        return None
     return mol.HasSubstructMatch(MolFromSmarts("[#5]"))
 
 
