@@ -8,6 +8,7 @@ class CurateRemoveMissingLabel(CurationStep):
     def __init__(self):
         super().__init__()
         self.issue = CurationIssue.missing_label
+        self.requires_y = True
 
     def _func(self, X, y, **kwargs):
         _labels = np.array(y, dtype=object)
@@ -36,6 +37,7 @@ class CurateMakeNumericLabel(CurationStep):
     def __init__(self):
         super().__init__()
         self.issue = CurationIssue.non_numeric_label
+        self.requires_y = True
 
     def _func(self, X, y, **kwargs):
         def _check_numeric(x):

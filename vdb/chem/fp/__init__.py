@@ -15,7 +15,12 @@ from .toptor import (
 )
 from .maccs import MACCS
 from .rdk import RDK
-from .mol_graph import MolGraphFunc
+from .base import BaseFPFunc
+
+
+def get_fp_func(class_name: str, **kwargs) -> BaseFPFunc:
+    return globals()[class_name](**kwargs)
+
 
 __all__ = [
     "ECFP4",
@@ -34,5 +39,5 @@ __all__ = [
     "BinaryTopTor",
     "MACCS",
     "RDK",
-    "MolGraphFunc"
+    "get_fp_func"
 ]

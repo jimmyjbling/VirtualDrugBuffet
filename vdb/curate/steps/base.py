@@ -52,6 +52,9 @@ class CurationStep(abc.ABC):
      mol that failed the curation step (issue) or is somehow altered by the CurationStep (note). Can be left as None if
      no flagging and or changing occurs during the step
 
+    You will also need to specify if the curation function requires the use of "labels" (the `y` parameter) to
+     function (the CurationWorkflow uses this to determine if the workflow will require that `y` must be passed)
+
     Some curation steps might need extra arguments (for example, generating a binary threshold would require a threshold
      parameter is passed). In this case, you can pass that as kwarg during construction, and it will be saved in a kwarg
      dict for later use by _func. This dict will automatically be pass as kwargs to _func, so when declaring your custom
@@ -72,6 +75,8 @@ class CurationStep(abc.ABC):
         the associated curation issue to attached to mol that gets flagged (None if no flagging occurs)
     note: CurationNote, default None
         the associated CurationNote to attach to a mol that gets changed (None if no change occurs)
+    requires_y: bool, default False
+        whether the CurationStep requires that the `y` variable is passed during the run
     dependency: set[str], default []
         the set of __name__ attributes for the CurationSteps this CurationStep is dependent on
     """
@@ -79,6 +84,7 @@ class CurationStep(abc.ABC):
         self.func_args: dict = kwargs
         self.issue: CurationNote or None = None
         self.note: CurationIssue or None = None
+        self.requires_y: bool = False
 
         self.dependency: set[str] = set()
 

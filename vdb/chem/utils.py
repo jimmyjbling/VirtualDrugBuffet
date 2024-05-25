@@ -10,7 +10,9 @@ from rdkit.Chem.rdDistGeom import ETKDGv3, EmbedMolecule
 NON_ORGANIC = MolFromSmarts("[!#6;!#8;!#7;!#16;!#15;!F;!Cl;!Br;!I;!Na;!K;!Mg;!Ca;!Li;!#1]")
 
 
-def is_mol(obj):
+def is_mol(obj, true_on_none: bool = False):
+    if obj is None and true_on_none:
+        return True
     return isinstance(obj, Mol)
 
 

@@ -3,9 +3,11 @@ import numpy.typing as npt
 
 from rdkit.Chem import Mol
 
+from vdb.curate.workflow import CurationWorkflow
 from vdb.chem.fp.base import BaseFPFunc
-from vdb.data.base import (_BaseDataset, _BaseSmiles, _BaseLabeled, _BaseDescriptor,
-                           SmilesVector, MolVector, NameVector, LabelVector, )
+
+from .base import (_BaseDataset, _BaseSmiles, _BaseLabeled, _BaseDescriptor, SmilesVector, MolVector,
+                   NameVector, LabelVector, )
 
 
 class SmilesDataset(_BaseDataset, _BaseSmiles):
@@ -149,12 +151,14 @@ class SmilesDataset(_BaseDataset, _BaseSmiles):
 
     def generate_fp(self, fp_func: BaseFPFunc):
         return SmilesFpDataset(smiles=self._smiles, mols=self._mols, names=self._names,
-                               fp_func=fp_func, fps=fp_func.generate_fps(self.get_smiles()))
+                               fp_func=fp_func, fps=fp_func.generate_fps(self.get_smiles())[0])
 
-    # TODO fix this
-    def curate(self, curation_workflow: CurationWorkflow):
-        return CuratedSmilesDataset(smiles=self._smiles, names=self._names, mols=self._mols,
-                                    curation_workflow=curation_workflow)
+    def curate(self, curation_workflow: CurationWorkflow, print_report: bool = False):
+        _mols, _, mask = curation_workflow.run_workflow(self.get_smiles(), y=None, print_report=print_report)
+        curated_mols = MolVector(_mols)
+        curated_smiles = curated_mols.to_smiles()
+        curated_names = NameVector(self.get_names()[mask])
+        return SmilesDataset(smiles=curated_smiles, mols=curated_mols, names=curated_names, generate_mols=False)
 
     def to_csv(self, file_loc, header: bool = True, delimiter: str = ","):
         open(file_loc, "w").write(self.to_csv_str(header=header, delimiter=delimiter))
@@ -253,12 +257,16 @@ class LabeledSmilesDataset(SmilesDataset, _BaseLabeled):
     # conversion functions
     def generate_fp(self, fp_func: BaseFPFunc):
         return LabeledSmilesFpDataset(smiles=self._smiles, labels=self._labels, mols=self._mols, names=self._names,
-                                      fp_func=fp_func, fps=fp_func.generate_fps(self.get_smiles()))
+                                      fp_func=fp_func, fps=fp_func.generate_fps(self.get_smiles())[0])
 
-    # TODO fix this
-    def curate(self, curation_workflow: CurationWorkflow):
-        return CuratedLabeledSmilesDataset(smiles=self._smiles, names=self._names, labels=self._labels,
-                                           mols=self._mols, curation_workflow=curation_workflow)
+    def curate(self, curation_workflow: CurationWorkflow, print_report: bool = False):
+        _mols, _labels, mask = curation_workflow.run_workflow(self.get_smiles(), y=None, print_report=print_report)
+        curated_mols = MolVector(_mols)
+        curated_smiles = curated_mols.to_smiles()
+        curated_names = NameVector(self.get_names()[mask])
+        curated_labels = LabelVector(_labels)
+        return LabeledSmilesDataset(smiles=curated_smiles, mols=curated_mols, names=curated_names,
+                                    labels=curated_labels, generate_mols=False)
 
     def to_csv(self, file_loc, header: bool = True, delimiter: str = ","):
         open(file_loc, "w").write(self.to_csv_str(header=header, delimiter=delimiter))

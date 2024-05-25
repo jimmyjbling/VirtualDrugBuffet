@@ -1,39 +1,52 @@
-from typing import Union
 import logging
 import sys
 import os
 
 
-class DummyLogger:
-    def debug(self, *args):
-        pass
+def setup_logger(name: str = 'root', debug: bool = False, dummy: bool = False) -> logging.Logger:
+    """
+    Creates a logging.Logger object with the passed setup
 
-    def info(self, *args):
-        pass
+    Parameters
+    ----------
+    name: str, default 'root'
+        name of the logger object
+    debug: bool, default False
+        add DEBUG level to logger (will be INFO otherwise)
+    dummy: bool, default False
+        return a logging.Logger object with a NullHandler
 
-    def warning(self, *args):
-        pass
+    Notes
+    -----
+    Logs are always written to the CWD
 
-    def error(self, *args):
-        pass
+    Using `dummy=True` is meant to allow for easy use of logging in function without the worry that a use might want to
+     turn logging off. When this is the case, the logger will not actually log anything to a log file
 
-    def critical(self, *args):
-        pass
+    All loggers are built to catch unhandled exceptions and write them to the log file, as well as catch any
+     `warnings.warn()` calls
 
+    Returns
+    -------
+    logger: logging.Logger
+        a Logger ready to be used for logging
+    """
+    logging.captureWarnings(True)  # capture all the warnings
 
-def setup_logger(name: str = 'root', debug: bool = False,
-                 console_logging: bool = False, dummy=False) -> Union[logging.Logger, DummyLogger]:
+    # return a Null logger if dummy is set to `True` since we this means we don't want to write logs
     if dummy:
-        return DummyLogger()
+        logger = logging.getLogger(name="dummy")
+        logger.addHandler(logging.NullHandler())
+        return logger
 
     logger = logging.getLogger(name=name)
 
     # setup handlers
     # write to package log if running in VirtualDrugBuffet directory else write to CWD
-    if "VirtualDrugBuffet" in os.getcwd():
-        file_handler = logging.FileHandler(os.path.join(os.path.dirname(__file__), "vdb.log"))
+    if "PolyPharma" in os.getcwd():
+        file_handler = logging.FileHandler(os.path.join(os.path.dirname(__file__), "polypharma.log"))
     else:
-        file_handler = logging.FileHandler(os.path.join(os.getcwd(), "vdb.log"))
+        file_handler = logging.FileHandler(os.path.join(os.getcwd(), "polypharma.log"))
     file_handler.setFormatter(logging.Formatter('%(asctime)s | %(name)s | %(levelname)s | %(message)s'))
     console_handler = logging.StreamHandler()
     console_handler.setFormatter(logging.Formatter('%(name)s - %(levelname)s - %(message)s'))
@@ -50,10 +63,7 @@ def setup_logger(name: str = 'root', debug: bool = False,
 
     # add handlers to logger
     logger.addHandler(file_handler)
-    if console_logging:
-        logger.addHandler(console_handler)
 
-    # TODO work on this here
     def handle_exception(exc_type, exc_value, exc_traceback):
         if issubclass(exc_type, KeyboardInterrupt):
             sys.__excepthook__(exc_type, exc_value, exc_traceback)

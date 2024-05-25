@@ -60,6 +60,7 @@ class _CurateRemoveDisagreeingDuplicates(CurationStep, abc.ABC):
 
         self._error_func = lambda x: -1
         self._agg_func = lambda x: -1
+        self.requires_y = True
 
     def _func(self, X, y, log_scale: bool = False, threshold: float = None, greater: bool = True, **kwargs):
         y = np.array(y, dtype=object)

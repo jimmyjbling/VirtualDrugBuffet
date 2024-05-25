@@ -1,5 +1,6 @@
 from collections import Counter
 import datetime
+from copy import deepcopy
 
 import numpy as np
 import numpy.typing as npt
@@ -12,6 +13,7 @@ from .steps import DEFAULT_CURATION_STEPS, CurationStep, get_curation_step
 
 from vdb.logger import setup_logger
 from vdb.utils import to_list
+from ..chem.utils import is_mol
 
 
 class CurationWorkflowError(Exception):
@@ -80,6 +82,7 @@ class CurationWorkflow(BaseEstimator, TransformerMixin):
         self._logger = setup_logger("curation") if do_logging else setup_logger(dummy=True)
 
         self._report_path = report_path
+        self._use_mols = use_mols
 
         _missing_deps = set.union(*[_step.missing_dependency(self._steps) for _step in self._steps])
 
@@ -111,20 +114,81 @@ class CurationWorkflow(BaseEstimator, TransformerMixin):
                 self._steps = self._steps[1:]
                 self._logger.warning(f"ignoring `CurateValid` step")
 
-    def run_workflow(self, X: npt.NDArray, y: npt.NDArray):
+        self._requires_y = any([step.requires_y for step in self._steps])
+        self._logger.debug("logger has steps the require `y`")
+
+    def _check_workflow_input(self, X: npt.NDArray, y: npt.NDArray or None):
+        if self._use_mols:
+            if not all([is_mol(_) for _ in X[:10]]):
+                _bad_type = [is_mol(_) for _ in X[:10]].index(False)
+                raise CurationWorkflowError(f"this workflow requires rdkit.Mol objects as an input; found {_bad_type}")
+            return deepcopy(X), y
+        if y is None and self._requires_y:
+            raise CurationWorkflowError("this workflow requires `y` is not None")
+        return X, y
+
+    def run_workflow(self, X: npt.NDArray, y: npt.NDArray or None = None, print_report: bool = False) \
+            -> tuple[npt.NDArray, npt.NDArray, npt.NDArray]:
+        """
+        This is the meat of the workflow; it will run the SMILES and optional labels through the curation steps.
+         It will not edit the passed arrays in-place, but will return the subset that passed curation as new arrays.
+         Will also return the boolean mask that results from combining all curation steps (useful for collecting
+         other metadata for just the molecules that passed curation, like IDs)
+
+        Parameters
+        ----------
+        X: NDArray
+            A 1-D array of the molecules to be curated (SMILES if use_mols is False, otherwise Rdkit.Mols)
+        y: NDArray or None, default = None
+            A 1-D array of the labels associated with the molecules.
+            Pass as `None` if there are no labels
+        print_report: bool = False
+            whether to print out the final curation report at the end
+
+        Notes
+        -----
+        Take careful note of the curation steps you added to the workflow and what they do.
+         Some, like the duplicate removers, can alter the labels of data points in way you might not initially expect
+         (e.g. take the means of all duplicates)
+
+        Raises
+        ------
+        CurationWorkflowError
+            this error is raised whenever the curation workflow runs it to issue with building or initiating the
+             workflow itself (step dependency not meets, `use_mols` is True but SMILES were passed to workflow, etc.)
+
+        Returns
+        -------
+        curated_X: NDArray
+            the curated molecules (either as SMILES if `CurateCanonicalize` is your last step otherwise rdkit.Mols)
+        curated_y: NDArray or None
+            the curated labels (will be None if a None was passed for y)
+
+        """
         _start = datetime.datetime.now()
         _overall_mask = np.ones(len(X)).astype(bool)
+
+        X, y = self._check_workflow_input(X, y)  # check the input to make sure it is compatible with the workflow
+
         self._report.set_size(len(X))
         for _step in self._steps:
-            _mask, X, y = _step(X=X, y=y)
+            _mask, X, y = _step(X=X, y=y)  # do the step
             self._logger.info(f"{len(X) - np.sum(_mask)} compounds failed step {str(_step)}")
-            if self._report_path:  # don't waste time with reporting if we don't need it
-                self._report.add_step(_step, _mask)
-            _overall_mask = np.all((_overall_mask, _mask), axis=0)
+            self._report.add_step(_step, _mask)
+            _overall_mask = np.all((_overall_mask, _mask), axis=0)  # update the overall mask
         _stop = datetime.datetime.now()
         self._logger.info(f"{np.sum(_overall_mask)} out of {len(X)} compounds passed curation workflow")
-        self._report.write_report(self._report_path, time_delta=_stop - _start)  # write out the report
-        return X[_overall_mask], y[_overall_mask]
+
+        # make the report is asked
+        if self._report_path:
+            self._report.write_report(self._report_path, time_delta=_stop - _start)  # write out the report
+            self._logger.info("curation report written to {}".format(self._report_path))
+
+        # print out the report is asked
+        if print_report:
+            print(self._report.generate_report_string(_stop-_start))
+
+        return X[_overall_mask], y[_overall_mask], _overall_mask
 
     def fit(self, X, y, **kwargs):
         pass
@@ -153,10 +217,7 @@ class CurationReport:
                 self._dictionary.add(_idx, issue=step.issue)
         self._dictionary.update_step_order(step)
 
-    def write_report(self, path: str or None, time_delta: datetime.timedelta):
-        if path is None:
-            return
-
+    def generate_report_string(self, time_delta: datetime.timedelta = "NA") -> str:
         _issue_counter, _num_removed = self._dictionary.gather_issue_counter()
         _note_counter, _num_altered = self._dictionary.gather_note_counter()
         report = (f"TOTAL PASSING CURATION: {self._size - _num_removed} out of {self._size}\n"
@@ -172,8 +233,12 @@ class CurationReport:
                 report += f"altered {_note_counter.get(key.note, 0)} compounds due to '{key}'\n"
 
         report += f"\naltered {_num_altered} compounds during curation\n"
+        return report
 
-        open(path, "w").write(report)
+    def write_report(self, path: str or None, time_delta: datetime.timedelta = "NA"):
+        if path is None:
+            return
+        open(path, "w").write(self.generate_report_string(time_delta=time_delta))
 
 
 class CurationDictionary:
