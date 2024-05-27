@@ -1,6 +1,8 @@
+from vdb.base import compile_step
 from vdb.chem.fp.base import RDKitFPFunc, BinaryFPFunc, DiscreteFPFunc, RdkitWrapper
 
 
+@compile_step
 class FCFP4(RDKitFPFunc, DiscreteFPFunc):
     """
     The FP calculation when generating FCFP4 fingerprints
@@ -18,6 +20,7 @@ class FCFP4(RDKitFPFunc, DiscreteFPFunc):
         self._dimension = 2048
 
 
+@compile_step
 class FCFP6(RDKitFPFunc, DiscreteFPFunc):
     """
     The FP calculation when generating FCFP6 fingerprints
@@ -35,6 +38,7 @@ class FCFP6(RDKitFPFunc, DiscreteFPFunc):
         self._dimension = 2048
 
 
+@compile_step
 class BinaryFCFP4(RDKitFPFunc, BinaryFPFunc):
     """
     The FP calculation when generating Binary FCFP4 fingerprints
@@ -52,6 +56,7 @@ class BinaryFCFP4(RDKitFPFunc, BinaryFPFunc):
         self._dimension = 2048
 
 
+@compile_step
 class BinaryFCFP6(RDKitFPFunc, BinaryFPFunc):
     """
     The FP calculation when generating Binary FCFP6 fingerprints

@@ -23,6 +23,7 @@ def get_fp_func(class_name: str, **kwargs) -> BaseFPFunc:
 
 
 __all__ = [
+    "BaseFPFunc",
     "ECFP4",
     "BinaryECFP4",
     "ECFP6",

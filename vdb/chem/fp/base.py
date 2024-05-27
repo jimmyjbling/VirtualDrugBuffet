@@ -7,6 +7,8 @@ from rdkit.rdBase import BlockLogs
 from sklearn.base import BaseEstimator, TransformerMixin
 from tqdm import tqdm
 
+from vdb.base import Step
+
 from vdb.chem.utils import to_mol
 from vdb.utils import isnan
 
@@ -35,7 +37,7 @@ def _handle_fail_nan(fp_func: Callable, dimensions: int = 1, *args, **kwargs):
         return [np.nan]*dimensions
 
 
-class BaseFPFunc(BaseEstimator, TransformerMixin):
+class BaseFPFunc(BaseEstimator, TransformerMixin, Step):
     """
     Base class for all FP functions used in the ml pipeline
     It is a child of the sklearn BaseEstimator and TransformerMixin to make it compatible with the `Pipeline` API

@@ -4,6 +4,7 @@ import numpy.typing as npt
 
 from ..issues import CurationIssue
 from ..notes import CurationNote
+from ...base import Step
 
 
 class CurationStepError(Exception):
@@ -13,7 +14,7 @@ class CurationStepError(Exception):
     pass
 
 
-class CurationStep(abc.ABC):
+class CurationStep(abc.ABC, Step):
     """
     The base abstract class for all CurationSteps.
     While following similar SciKitLearn API rules, CurationStep is not a true transformer, since it is only

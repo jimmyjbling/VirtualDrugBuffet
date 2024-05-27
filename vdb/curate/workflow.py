@@ -13,14 +13,16 @@ from .steps import DEFAULT_CURATION_STEPS, CurationStep, get_curation_step
 
 from vdb.logger import setup_logger
 from vdb.utils import to_list
-from ..chem.utils import is_mol
+from vdb.base import compile_step, Step
+from vdb.chem.utils import is_mol
 
 
 class CurationWorkflowError(Exception):
     pass
 
 
-class CurationWorkflow(BaseEstimator, TransformerMixin):
+@compile_step
+class CurationWorkflow(BaseEstimator, TransformerMixin, Step):
     """
     A SciKit Learn compatible curation transformer
 
@@ -198,6 +200,10 @@ class CurationWorkflow(BaseEstimator, TransformerMixin):
 
 
 class CurationReport:
+    """
+    This is just a helper class to handle the processing and datastore for curation report generation.
+    Very unlikely that you will need to interact with this class directly
+    """
     def __init__(self):
         self._dictionary = CurationDictionary()
         self._size = -1
@@ -242,6 +248,10 @@ class CurationReport:
 
 
 class CurationDictionary:
+    """
+    This is pretty much a native python DefaultDict with some extra functions to help with quick processing of curation
+    issues and notes
+    """
     def __init__(self):
         self._curr_curate_dict = {}
 

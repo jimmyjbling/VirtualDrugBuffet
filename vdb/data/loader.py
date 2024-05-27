@@ -3,10 +3,10 @@ from typing import Union, Optional
 
 from sklearn.base import TransformerMixin, BaseEstimator
 
-from vdb.data.dataset import SmilesDataset, LabeledSmilesDataset
-from vdb.data.base import _BaseLoader, _BaseSmiles, _BaseLabeled, NameVector, SmilesVector, LabelVector
-
+from .dataset import SmilesDataset, LabeledSmilesDataset
+from .base import _BaseLoader, _BaseSmiles, _BaseLabeled, NameVector, SmilesVector, LabelVector
 from vdb.chem.utils import is_smi, to_mols
+from vdb.base import Step, compile_step
 
 
 class SmilesLoader(_BaseLoader, _BaseSmiles):
@@ -318,22 +318,27 @@ class LabeledSmilesLoader(SmilesLoader, _BaseLabeled):
             yield [_[self._label_col] for _ in self]
 
 
-class SmilesLoaderIO(BaseEstimator, TransformerMixin):
-    def __init__(self, file_path: str, delimiter: str = "\t", header: bool = False):
+@compile_step
+class SmilesLoaderIO(BaseEstimator, TransformerMixin, Step):
+    def __init__(self, file_path: str, smi_col: str, label_col: str = None,
+                 delimiter: str = "\t", header: bool = False):
         self._delimiter = delimiter
         self._header = header
         self._file_path = file_path
-
-    def transform(self, X: str, y: str = None):
-        if y is not None:
-            return LabeledSmilesLoader(self._file_path, smiles_col=X, label_col=y, delimiter=self._delimiter,
-                                       header=self._header).get_transformer_input()
+        self._smi_col = smi_col
+        self._label_col = label_col
+        if self._label_col:
+            self._loader = LabeledSmilesLoader(self._file_path, smiles_col=self._smi_col, label_col=self._label_col,
+                                               delimiter=self._delimiter, header=self._header)
         else:
-            return SmilesLoader(self._file_path, smiles_col=X, delimiter=self._delimiter,
-                                header=self._header).get_transformer_input()
+            self._loader = SmilesLoader(self._file_path, smiles_col=self._smi_col,
+                                        delimiter=self._delimiter, header=self._header)
 
-    def fit(self, X, y=None, **fit_params):
+    def transform(self, X=None, y=None):
+        return self._loader.get_transformer_input()
+
+    def fit(self, X=None, y=None, **fit_params):
         pass
 
-    def fit_transform(self, X: str, y: str = None, **fit_params):
-        return self.transform(X, y)
+    def fit_transform(self, X=None, y=None, **fit_params):
+        return self.transform()

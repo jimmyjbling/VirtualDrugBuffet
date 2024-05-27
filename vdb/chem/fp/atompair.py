@@ -1,6 +1,8 @@
 from vdb.chem.fp.base import RDKitFPFunc, BinaryFPFunc, DiscreteFPFunc, RdkitWrapper
+from vdb.base import compile_step
 
 
+@compile_step
 class AtomPair(RDKitFPFunc, DiscreteFPFunc):
     """
     The FP calculation when generating AtomPair fingerprints
@@ -18,6 +20,7 @@ class AtomPair(RDKitFPFunc, DiscreteFPFunc):
         self._dimension = 2048
 
 
+@compile_step
 class BinaryAtomPair(RDKitFPFunc, BinaryFPFunc):
     """
     The FP calculation when generating Binary AtomPair fingerprints

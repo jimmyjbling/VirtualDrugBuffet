@@ -1,6 +1,8 @@
+from vdb.base import compile_step
 from vdb.chem.fp.base import RDKitFPFunc, BinaryFPFunc, RdkitWrapper
 
 
+@compile_step
 class RDK(RDKitFPFunc, BinaryFPFunc):
     """
     The FP calculation when generating RDK fingerprints

@@ -3,8 +3,10 @@ import numpy as np
 from vdb.curate.steps.base import CurationStep
 from vdb.curate.issues import CurationIssue
 from vdb.chem.utils import to_mols
+from vdb.base import compile_step
 
 
+@compile_step
 class CurateValid(CurationStep):
     def __init__(self):
         super().__init__()

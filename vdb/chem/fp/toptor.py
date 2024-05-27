@@ -1,6 +1,8 @@
+from vdb.base import compile_step
 from vdb.chem.fp.base import RDKitFPFunc, BinaryFPFunc, DiscreteFPFunc, RdkitWrapper
 
 
+@compile_step
 class TopTor(RDKitFPFunc, DiscreteFPFunc):
     """
     The FP calculation when generating TopologicalTorsion fingerprints
@@ -18,6 +20,7 @@ class TopTor(RDKitFPFunc, DiscreteFPFunc):
         self._dimension = 2048
 
 
+@compile_step
 class BinaryTopTor(RDKitFPFunc, BinaryFPFunc):
     """
     The FP calculation when generating Binary TopologicalTorsion fingerprints

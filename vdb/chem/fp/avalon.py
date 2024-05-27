@@ -1,6 +1,8 @@
+from vdb.base import compile_step
 from vdb.chem.fp.base import RDKitFPFunc, BinaryFPFunc, DiscreteFPFunc, RdkitWrapper
 
 
+@compile_step
 class Avalon(RDKitFPFunc, DiscreteFPFunc):
     """
     The FP calculation when generating Avalon fingerprints
@@ -18,6 +20,7 @@ class Avalon(RDKitFPFunc, DiscreteFPFunc):
         self._dimension = 2048
 
 
+@compile_step
 class BinaryAvalon(RDKitFPFunc, BinaryFPFunc):
     """
     The FP calculation when generating Binary Avalon fingerprints

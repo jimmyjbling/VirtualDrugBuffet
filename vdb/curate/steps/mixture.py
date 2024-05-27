@@ -3,8 +3,10 @@ from rdkit.Chem import GetMolFrags
 
 from vdb.curate.steps.base import CurationStep
 from vdb.curate.issues import CurationIssue
+from vdb.base import compile_step
 
 
+@compile_step
 class CurateMixtures(CurationStep):
     def __init__(self):
         super().__init__()

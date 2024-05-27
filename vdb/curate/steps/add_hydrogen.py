@@ -4,8 +4,10 @@ from vdb.curate.steps.base import CurationStep
 from vdb.curate.notes import CurationNote
 from vdb.curate.issues import CurationIssue
 from vdb.chem.utils import add_hydrogen
+from vdb.base import compile_step
 
 
+@compile_step
 class CurateAddH(CurationStep):
     def __init__(self):
         super().__init__()

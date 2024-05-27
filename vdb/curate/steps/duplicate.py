@@ -5,11 +5,13 @@ import numpy as np
 from vdb.curate.steps.base import CurationStep
 from vdb.curate.issues import CurationIssue
 from vdb.chem.utils import to_smis
+from vdb.base import compile_step
 
 
 # TODO this needs documentation to difference all the different methods here
 
 
+@compile_step
 class CurateRemoveDuplicates(CurationStep):
     # This assumes that you already have canonical smiles
     def __init__(self):
@@ -32,6 +34,7 @@ class CurateRemoveDuplicates(CurationStep):
 
 
 # keeps the first copy and removes all others
+@compile_step
 class CurateRemoveDuplicatesGreedy(CurationStep):
     # This assumes that you already have canonical smiles; keeps one of the duplicates
     def __init__(self):
@@ -88,6 +91,7 @@ class _CurateRemoveDisagreeingDuplicates(CurationStep, abc.ABC):
         return 5
 
 
+@compile_step
 class CurateRemoveDisagreeingDuplicatesMinMax(_CurateRemoveDisagreeingDuplicates):
     # This assumes that you already have numerical labels
     def __init__(self, threshold: float = 2, log_scale: bool = False, greater: bool = True):
@@ -106,6 +110,7 @@ class CurateRemoveDisagreeingDuplicatesMinMax(_CurateRemoveDisagreeingDuplicates
         self._agg_func = agg_func
 
 
+@compile_step
 class CurateRemoveDisagreeingDuplicatesStd(_CurateRemoveDisagreeingDuplicates):
     # This assumes that you already have numerical labels
     def __init__(self, threshold: float = 0.5, log_scale: bool = False, greater: bool = True):
@@ -124,6 +129,7 @@ class CurateRemoveDisagreeingDuplicatesStd(_CurateRemoveDisagreeingDuplicates):
         self._agg_func = agg_func
 
 
+@compile_step
 class CurateRemoveDisagreeingDuplicatesCategorical(_CurateRemoveDisagreeingDuplicates):
     """
     Purity is defined as the occupancy of the most abundant element in a set, so a set of
