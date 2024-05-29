@@ -3,6 +3,8 @@ import pickle
 from typing import Callable
 
 import numpy as np
+import numpy.typing as npt
+
 from rdkit.rdBase import BlockLogs
 from sklearn.base import BaseEstimator, TransformerMixin
 from tqdm import tqdm
@@ -93,11 +95,19 @@ class BaseFPFunc(BaseEstimator, TransformerMixin, Step):
         return isinstance(self, BinaryFPFunc)
 
     def get_dimension(self) -> int:
+        """
+        Gets dimensionality of the Fingerprint
+
+        Returns
+        -------
+        int
+        """
         return self._dimension
 
-    def generate_fps(self, smis: str or list[str], nan_on_fail: bool = True):
+    def generate_fps(self, smis: str or list[str], nan_on_fail: bool = True, return_mask: bool = False) \
+            -> npt.NDArray or tuple[npt.NDArray, npt.NDArray]:
         """
-        Generate Fingerprints for a set of smi
+        Generate Fingerprints for a set of smiles
 
         Parameters
         ----------
@@ -105,7 +115,8 @@ class BaseFPFunc(BaseEstimator, TransformerMixin, Step):
             the SMILES (or multiple SMILES) you want to generate a fingerprint(s) for
         nan_on_fail : bool, default: True
             if True will return `np.nan` for a given SMILES if any exception is raised during fp generation
-
+        return_mask: bool, default False
+            return a boolean mask of SMILES that FPs were successfully generated for
         Returns
         -------
         np.ndarray
@@ -125,9 +136,12 @@ class BaseFPFunc(BaseEstimator, TransformerMixin, Step):
 
         _tmp = np.array(_tmp)
 
-        pass_bool = ~np.any(isnan(_tmp), axis=1)  # determine which fingerprints failed to generate
+        mask = ~np.any(isnan(_tmp), axis=1)  # determine which fingerprints failed to generate
 
-        return _tmp, pass_bool
+        if return_mask:
+            return _tmp, mask
+        else:
+            return _tmp
 
     def fit(self, X, y=None):
         pass
@@ -160,7 +174,7 @@ class DiscreteFPFunc(BaseFPFunc):
     An abstract class used to declare an FPFunc as generating a discrete fingerprint output.
     This means all values in the fingerprint are whole numbers (can be `0` and negative).
     This is more general than the `BinaryFPFunc`.
-    Even if all values are binary except for the one which is not (e.g. `2`), it must be a `DiscreteFPFunc`.
+    Even if all values are binary except for one which is not (e.g. `2`), it must be a `DiscreteFPFunc`.
     For example, an FPFunc wrapping the rdkit GetHashedMorganFingerprint would be a `DiscreteFPFunc`
     """
     def __init__(self, **kwargs):
@@ -172,7 +186,7 @@ class ContinuousFPFunc(BaseFPFunc):
     An abstract class used to declare an FPFunc as generating a continuous fingerprint output.
     This means all values in the fingerprint are real floats.
     This is more general than the `DiscreteFPFunc`.
-    Even if all values are discrete except for the one which is not (e.g. `2.342`), it must be a `ContinuousFPFunc`.
+    Even if all values are discrete except for one which is not (e.g. `2.342`), it must be a `ContinuousFPFunc`.
     For example, an FPFunc using the Mordred fingerprinting functions would be a ContinuousFPFunc
     """
     def __init__(self, **kwargs):
@@ -186,7 +200,7 @@ class ObjectFPFunc(BaseFPFunc):
     Instead, it returns some type of object (usually an instance of a custom class).
     This should only be used in cases where preprocessing of SMILES in non-standard ways is needed.
     It is most commonly used as the `FPFunc` for GCN or SmilesTransformer, which often require a multitude of inputs.
-    For example, an FPFunc for generating the `MolGraph` objects needed for a GCN would a child of `ObjectFPFunc`
+    For example, an FPFunc for generating the `MolGraph` objects needed for a GCN would be a child of `ObjectFPFunc`
     """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -200,7 +214,7 @@ class RDKitFPFunc(BaseFPFunc):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def generate_fps_as_rdkit_objects(self, smis: str or list[str]):
+    def generate_fps_as_rdkit_objects(self, smis: str or list[str]) -> list:
         """
         Generates a list of RDKit Vector object (type determined by function) rather than a numpy array of the
         fingerprint vectors.
@@ -226,9 +240,16 @@ class RdkitWrapper:
     Pybind or otherwise non-python functions (like, for example, RDKit functions that are binding from C++)
     cannot be serialized by pickle, thus cannot be saved with a pickle dump.
 
-    This is a problem since it is much better for us to just dump to a pickle and then load it later.
+    This is a problem since it VDB depends on being able to pickle functions to load later for reproducability.
     This wrapper gets around that issue by importing the required function on the fly at runtime, rather than needing
     to serialize the function for storage in the pickle itself
+
+    Notes
+    -----
+    The only problem with this is that if RDKit versions changes and for some reason the FP function is altered,
+     there would be no pickling error, as the function would just be imported.
+    Luckily, the VDB Step concept compensates for this, by saving the version of RDKit that was used with the FPFunc.
+    However, you will need to manully match this yourself (unless some script exists to check it for you in the future)
 
     Parameters
     ----------
