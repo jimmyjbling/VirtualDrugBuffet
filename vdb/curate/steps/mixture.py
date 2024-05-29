@@ -39,7 +39,7 @@ class CurateDemix(CurationStep):
     def _func(self, X, y, **kwargs):
         _chooser = LargestFragmentChooser()
 
-        _X = np.array([_chooser.choose(remove_Hs(_mol)) if _mol is not None else None for _mol in X ])
+        _X = np.array([_chooser.choose(remove_Hs(_mol)) if _mol is not None else None for _mol in X])
         mask = np.vectorize(lambda x: x is not None)(_X) > 0
         return mask, _X, y
 
