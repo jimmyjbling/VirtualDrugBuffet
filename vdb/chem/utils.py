@@ -4,7 +4,8 @@ from typing import Iterable
 
 from func_timeout import func_timeout
 
-from rdkit.Chem import Mol, MolFromSmiles, MolToSmiles, AddHs, MolFromSmarts, RemoveStereochemistry, SanitizeMol
+from rdkit.Chem import (Mol, MolFromSmiles, MolToSmiles, AddHs, MolFromSmarts, RemoveStereochemistry, SanitizeMol,
+                        RemoveHs, RemoveHsParameters)
 from rdkit.Chem.Scaffolds import MurckoScaffold
 from rdkit.Chem.rdDistGeom import ETKDGv3, EmbedMolecule
 
@@ -417,3 +418,26 @@ def generate_scaffold(mol: str or Mol or object or None, include_chirality: bool
     if mol is None:
         return None
     return MurckoScaffold.MurckoScaffoldSmiles(mol=mol, includeChirality=include_chirality)
+
+
+def remove_Hs(mol: Mol or None, remove_zero_degree: bool = True) -> Mol or None:
+    """
+    Removes the Hs from a Mol and returns as a new Mol object
+    When `remove_zero_degree` is True will also remove any zero-degree Hs (like [H+] ions)
+
+    Parameters
+    ----------
+    mol: Mol or None
+        Mol to remove Hs from
+    remove_zero_degree: bool, default True
+        whether to also remove zero-degree Hs
+
+    Returns
+    -------
+    mol: Mol or None
+        mol without Hs (or None if mol was None
+    """
+    params = RemoveHsParameters()
+    params.removeDegreeZero = True
+    mol_nohs = RemoveHs(mol, params)
+    return mol_nohs
