@@ -437,6 +437,8 @@ def remove_Hs(mol: Mol or None, remove_zero_degree: bool = True) -> Mol or None:
     mol: Mol or None
         mol without Hs (or None if mol was None
     """
+    if mol is None:
+        return None
     params = RemoveHsParameters()
     params.removeDegreeZero = True
     mol_nohs = RemoveHs(mol, params)
