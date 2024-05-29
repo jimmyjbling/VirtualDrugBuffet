@@ -8,6 +8,10 @@ from rdkit.Chem import Mol, MolFromSmiles, MolToSmiles, AddHs, MolFromSmarts, Re
 from rdkit.Chem.Scaffolds import MurckoScaffold
 from rdkit.Chem.rdDistGeom import ETKDGv3, EmbedMolecule
 
+# get rid of those pesky rdkit logger dumps
+from rdkit.rdBase import BlockLogs
+BLOCKER = BlockLogs()
+
 
 NON_ORGANIC = MolFromSmarts("[!#6;!#5;!#8;!#7;!#16;!#15;!F;!Cl;!Br;!I;!Na;!K;!Mg;!Ca;!Li;!#1]")
 
