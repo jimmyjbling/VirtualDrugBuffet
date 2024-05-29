@@ -7,6 +7,7 @@ class CurationNote(enum.Enum):
     neutralized = "compound neutralized"
     canonical = "compound made canonical"
     added_Hs = "explict H added to compound"
+    demixed = "seperated out largest mixture component"
     added_random_3d_conformer = "3d conformer added to compound"
     label_made_numeric = "label made numeric"
     label_made_binary = "label made binary"

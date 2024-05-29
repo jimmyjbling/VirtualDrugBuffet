@@ -182,6 +182,29 @@ class TestCurationSteps(unittest.TestCase):
         self.assertEqual(len(TEST_MOLS), len(X))
         self.assertEqual(len(TEST_MOLS), len(mask))
 
+        dummy_smiles = ["[Cl-].[H+]", "c1ccccc1.[NH2+]"]
+        dummy_mols = [MolFromSmiles(_) for _ in dummy_smiles]
+        dummy_labels = [1,1]
+        mask, X, y = _curate_function(dummy_mols, dummy_labels)
+        self.assertEqual([True, False], mask.tolist())
+        self.assertEqual(MolToSmiles(X[0]), "[Cl-]")
+
+    def test_demixture(self):
+        _curate_function = CurateDemix()
+        mask, X, y = _curate_function(TEST_MOLS, TEST_LABELS)
+        self.assertEqual(TEST_LABELS, y)
+        self.assertEqual(len(mask), len(X))
+        self.assertEqual(len(TEST_MOLS), len(X))
+        self.assertEqual(len(TEST_MOLS), len(mask))
+
+        dummy_smiles = ["[Cl-].[H+]", "c1ccccc1.[NH2+]", "hello"]
+        dummy_mols = [MolFromSmiles(_) for _ in dummy_smiles]
+        dummy_labels = [1,1, 1]
+        mask, X, y = _curate_function(dummy_mols, dummy_labels)
+        self.assertEqual([True, True, False], mask.tolist())
+        self.assertEqual(MolToSmiles(X[0]), "[Cl-]")
+        self.assertEqual(MolToSmiles(X[1]), "c1ccccc1")
+
     def test_Neutralize(self):
         _curate_function = CurateNeutralize()
         mask, X, y = _curate_function(TEST_MOLS, TEST_LABELS)

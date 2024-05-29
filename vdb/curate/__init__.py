@@ -8,6 +8,7 @@ __all__ = [
     "CurationStep",
     "CurationStepError",
     "CurateMixtures",
+    "CurateDemix",
     "CurateInorganic",
     "CurateBoron",
     "CurateValid",

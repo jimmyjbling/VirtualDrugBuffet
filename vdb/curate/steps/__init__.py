@@ -8,7 +8,7 @@ from .duplicate import (CurateRemoveDuplicates, CurateRemoveDuplicatesGreedy,
 from .flatten import CurateFlatten
 from .valid_mol import CurateValid
 from .inorganic import CurateInorganic
-from .mixture import CurateMixtures
+from .mixture import CurateMixtures, CurateDemix
 from .label import CurateRemoveMissingLabel, CurateMakeNumericLabel
 from .neutralize import CurateNeutralize
 from .sanitize import CurateSanitize
@@ -27,6 +27,7 @@ __all__ = [
     "CurationStep",
     "CurationStepError",
     "CurateMixtures",
+    "CurateDemix",
     "CurateInorganic",
     "CurateBoron",
     "CurateValid",
