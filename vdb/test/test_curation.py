@@ -53,6 +53,27 @@ class TestCurationSteps(unittest.TestCase):
         self.assertEqual(len(TEST_MOLS), len(X))
         self.assertEqual(len(TEST_MOLS), len(mask))
 
+    def test_MW(self):
+        _curate_function = CurateMW()
+        mask, X, y = _curate_function(TEST_MOLS, TEST_LABELS)
+        self.assertEqual(TEST_LABELS, y)
+        self.assertEqual(len(mask), len(X))
+        self.assertEqual(len(TEST_MOLS), len(X))
+        self.assertEqual(len(TEST_MOLS), len(mask))
+
+        with self.assertRaises(ValueError):
+            CurateMW(min_mw=-1)
+            CurateMW(min_mw=100, max_mw=1)
+            CurateMW(min_mw=100, max_mw=100)
+
+        _curate_function = CurateMW(min_mw=10, max_mw=20)
+        _smiles = ["C", "CC"]
+        _mols = [MolFromSmiles(_) for _ in _smiles]
+        mask, X, y = _curate_function(_mols)
+        self.assertIsNone(y)
+        self.assertEqual([True, False], mask.tolist())
+        self.assertEqual(_smiles, [MolToSmiles(_) for _ in X])
+
     def test_Canonicalize(self):
         _curate_function = CurateCanonicalize()
         mask, X, y = _curate_function(TEST_MOLS, TEST_LABELS)
