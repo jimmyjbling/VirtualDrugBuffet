@@ -8,6 +8,7 @@ from rdkit.Chem import (Mol, MolFromSmiles, MolToSmiles, AddHs, MolFromSmarts, R
                         RemoveHs, RemoveHsParameters)
 from rdkit.Chem.Scaffolds import MurckoScaffold
 from rdkit.Chem.rdDistGeom import ETKDGv3, EmbedMolecule
+from rdkit.Chem.Descriptors import ExactMolWt
 
 # get rid of those pesky rdkit logger dumps
 from rdkit.rdBase import BlockLogs
@@ -443,3 +444,23 @@ def remove_Hs(mol: Mol or None, remove_zero_degree: bool = True) -> Mol or None:
     params.removeDegreeZero = True
     mol_nohs = RemoveHs(mol, params)
     return mol_nohs
+
+
+def get_mw(mol: Mol or None) -> float:
+    """
+    Gets the exact molecular weight of the chemical
+
+    Parameters
+    ----------
+    mol: Mol or None
+        molecule to get MW for
+
+    Returns
+    -------
+    MW: float
+        molecular weight
+        will be 0 if mol is None
+    """
+    if mol is None:
+        return 0
+    return ExactMolWt(mol)

@@ -25,6 +25,7 @@ __all__ = [
     "CurateRemoveDuplicatesGreedy",
     "CurateRemoveMissingLabel",
     "CurateMakeNumericLabel",
+    "CurateMW",
     "get_curation_step",
     "DEFAULT_CURATION_STEPS",
     "CurationIssue",

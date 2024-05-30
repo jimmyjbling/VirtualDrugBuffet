@@ -29,5 +29,7 @@ __all__ = [
     "to_smi",
     "to_mols",
     "to_smis",
-    "atomize_smiles"
+    "atomize_smiles",
+    "remove_Hs",
+    "get_mw"
 ]

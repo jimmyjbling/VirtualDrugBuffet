@@ -12,6 +12,7 @@ from .mixture import CurateMixtures, CurateDemix
 from .label import CurateRemoveMissingLabel, CurateMakeNumericLabel
 from .neutralize import CurateNeutralize
 from .sanitize import CurateSanitize
+from .mw import CurateMW
 from .base import CurationStepError, CurationStep
 
 DEFAULT_CURATION_STEPS = [CurateValid(), CurateCanonicalize()]
@@ -44,6 +45,7 @@ __all__ = [
     "CurateRemoveDuplicatesGreedy",
     "CurateRemoveMissingLabel",
     "CurateMakeNumericLabel",
+    "CurateMW",
     "get_curation_step",
     "DEFAULT_CURATION_STEPS"
 ]
