@@ -23,4 +23,4 @@ class CurateCanonicalize(CurationStep):
 
     @staticmethod
     def get_rank():
-        return 6
+        return 9

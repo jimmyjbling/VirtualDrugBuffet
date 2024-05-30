@@ -30,7 +30,7 @@ class CurateRemoveDuplicates(CurationStep):
 
     @staticmethod
     def get_rank():
-        return 4
+        return 7
 
 
 # keeps the first copy and removes all others
@@ -53,7 +53,7 @@ class CurateRemoveDuplicatesGreedy(CurationStep):
 
     @staticmethod
     def get_rank():
-        return 4
+        return 7
 
 
 class _CurateRemoveDisagreeingDuplicates(CurationStep, abc.ABC):
@@ -88,7 +88,7 @@ class _CurateRemoveDisagreeingDuplicates(CurationStep, abc.ABC):
 
     @staticmethod
     def get_rank():
-        return 5
+        return 8
 
 
 @compile_step

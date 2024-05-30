@@ -27,4 +27,4 @@ class CurateBoron(CurationStep):
 
     @staticmethod
     def get_rank():
-        return 2
+        return 4

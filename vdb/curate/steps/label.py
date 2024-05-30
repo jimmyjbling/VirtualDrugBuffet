@@ -32,7 +32,7 @@ class CurateRemoveMissingLabel(CurationStep):
 
     @staticmethod
     def get_rank():
-        return 3
+        return 5
 
 
 @compile_step
@@ -64,4 +64,4 @@ class CurateMakeNumericLabel(CurationStep):
 
     @staticmethod
     def get_rank():
-        return 3
+        return 5

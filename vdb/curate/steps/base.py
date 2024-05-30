@@ -41,11 +41,14 @@ class CurationStep(abc.ABC, Step):
             - This function is used to determine when this CurationStep should occur with respect to other steps.
               The order for ranking is as follows:
                 1. RDKit mol creation (NEVER USE THIS! ONLY CurateValid SHOULD BE 1)
-                2. Excludes a value (e.g. mixture)
-                3. Changes a value (e.g. neutralize)F
-                4. Duplicate handling
-                5. Duplicate handling that changes values
-                6. Canonicalize SMILES (NEVER USE THIS! ONLY CurateCanonicalize SHOULD BE 6)
+                2. Subsets a molecule (e.g. mixture handling)
+                3. Changes/Standardizes a molecule (e.g. neutralize, flatten)
+                4. Excludes a molecule (e.g. inorganic)
+                5. Standardize labels (e.g. make numeric/categorical)
+                6. Modify labels (e.g. binarize continuous labels)
+                7. Duplicate handling (e.g. greedy duplicate handling
+                8. Duplicate handling that changes label values
+                9. Canonicalize SMILES (NEVER USE THIS! ONLY CurateCanonicalize SHOULD BE 9)
               excludes means values are not changed, just flagged (in-place or out-of-place)
               changes means mols are both flagged and possibly changed
 
