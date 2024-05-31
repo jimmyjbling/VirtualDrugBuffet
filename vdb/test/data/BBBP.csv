@@ -2048,3 +2048,4 @@ num,name,p_np,smiles
 2051,mesocarb,1,[O+]1=N[N](C=C1[N-]C(NC2=CC=CC=C2)=O)C(CC3=CC=CC=C3)C
 2052,tofisoline,1,C1=C(OC)C(=CC2=C1C(=[N+](C(=C2CC)C)[NH-])C3=CC=C(C(=C3)OC)OC)OC
 2053,azidamfenicol,1,[N+](=NCC(=O)N[C@@H]([C@H](O)C1=CC=C([N+]([O-])=O)C=C1)CO)=[N-]
+BAD,BAD,1,C(C)(C)(C)(C)(C)(C)(C)CCCCCO

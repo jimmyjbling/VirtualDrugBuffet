@@ -28,6 +28,68 @@ DUMMY_DUP_LABELS = [1, 1, 1, 1, 4.4, 2.1, 0, np.nan, 100]
 DUMMY_CAT_LABELS = ["Y", "Y", "Y", "Y", "0", "Y", "0", "0", np.nan]
 
 
+class TestCurationWorkflow(unittest.TestCase):
+    def test_workflow(self):
+        workflow = CurationWorkflow(DEFAULT_CURATION_STEPS, do_logging=False)
+
+    def test_missing_deps(self):
+        with self.assertRaises(CurationWorkflowError):
+            workflow = CurationWorkflow(DEFAULT_CURATION_STEPS+[CurateRemoveDisagreeingDuplicatesStd()],
+                                        correct_broken=False, do_logging=False)
+
+    def test_fix_missing_deps(self):
+        workflow = CurationWorkflow([CurateValid(), CurateRemoveDisagreeingDuplicatesStd()], do_logging=False)
+        self.assertEquals(workflow._steps[1], CurateMakeNumericLabel())
+
+    def test_optimize_order(self):
+        workflow = CurationWorkflow([CurateValid(), CurateCanonicalize(), CurateDemix()], do_logging=False)
+        self.assertEqual(workflow._steps[0], CurateValid())
+        self.assertEqual(workflow._steps[-1], CurateCanonicalize())
+
+    def test_valid_not_first(self):
+        with self.assertRaises(CurationWorkflowError):
+            workflow = CurationWorkflow([CurateCanonicalize(), CurateDemix()], correct_broken=False, do_logging=False)
+        workflow = CurationWorkflow([CurateCanonicalize(), CurateDemix()], correct_broken=False, use_mols=True, do_logging=False)
+
+    def test_fix_missing_valid(self):
+        workflow = CurationWorkflow([CurateCanonicalize(), CurateDemix()], correct_broken=True, do_logging=False)
+        self.assertEqual(workflow._steps[0], CurateValid())
+        workflow = CurationWorkflow([CurateCanonicalize(), CurateDemix()], correct_broken=True, use_mols=True, do_logging=False)
+        self.assertNotEqual(workflow._steps[0], CurateValid())
+
+    def test_requires_y(self):
+        workflow = CurationWorkflow([CurateCanonicalize(), CurateDemix(), CurateMakeNumericLabel()], do_logging=False)
+        self.assertTrue(workflow._requires_y)
+        workflow = CurationWorkflow([CurateCanonicalize(), CurateDemix()], do_logging=False)
+        self.assertFalse(workflow._requires_y)
+
+    def test_run(self):
+        workflow = CurationWorkflow(DEFAULT_CURATION_STEPS, do_logging=False)
+        X, y, mask = workflow.run_workflow(np.array(TEST_SMILES), np.array(TEST_LABELS))
+        self.assertNotEqual(len(X), len(TEST_SMILES))
+        self.assertEqual(mask.sum(), len(X))
+        workflow = CurationWorkflow(DEFAULT_CURATION_STEPS, use_mols=True, do_logging=False)
+        X, y, mask = workflow.run_workflow(np.array(TEST_MOLS), np.array(TEST_LABELS))
+        self.assertNotEqual(len(X), len(TEST_MOLS))
+        self.assertEqual(mask.sum(), len(X))
+
+    def test_report(self):
+        import os
+        workflow = CurationWorkflow(DEFAULT_CURATION_STEPS, do_logging=False, report_path="./TEST_REPORT.txt")
+        X, y, mask = workflow.run_workflow(np.array(TEST_SMILES), np.array(TEST_LABELS))
+        self.assertTrue(os.path.exists("./TEST_REPORT.txt"))
+        os.remove("./TEST_REPORT.txt")
+
+    def test_report_counting(self):
+        workflow = CurationWorkflow(DEFAULT_CURATION_STEPS, do_logging=False)
+        X, y, mask = workflow.run_workflow(np.array(TEST_SMILES), np.array(TEST_LABELS))
+        _, _num_removed = workflow._report._dictionary.gather_issue_counter()
+        self.assertEqual(_num_removed, len(mask)-mask.sum())
+        _, _num_altered = workflow._report._dictionary.gather_note_counter()
+        self.assertEqual(_num_altered, mask.sum())
+        self.assertEqual(_num_removed+_num_altered, len(mask))
+
+
 class TestCurationSteps(unittest.TestCase):
     def test_Add3D(self):
         _curate_function = CurateAdd3D()

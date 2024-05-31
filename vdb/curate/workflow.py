@@ -311,7 +311,7 @@ class CurationDictionary:
         _note_counter = Counter()
         _number_alter = 0
         for key in self.note_keys():
-            if len(self.get_issues(key)) > 1:
+            if key in self.issue_keys():
                 continue
             _note_counter.update(self.get_notes(key))
             _number_alter += 1
