@@ -1,6 +1,8 @@
 import inspect
 from copy import deepcopy
 
+import numpy as np
+
 from vdb import __version__
 
 
@@ -38,6 +40,19 @@ def compile_step(cls):
 #     for key, val in obj.__dict__.items():
 #         setattr(_new_obj, key, val)
 #     return _new_obj
+
+
+def prep_curation_input(func):
+    def wrap(self, molecules, y):
+        molecules = np.atleast_1d(molecules)
+
+        if y is not None:
+            y = np.atleast_1d(y)
+            if len(y.shape) == 1:
+                y = y.reshape((-1, 1))
+
+        return func(self, molecules, y)
+    return wrap
 
 
 class Step:

@@ -10,4 +10,5 @@ class CurationNote(enum.Enum):
     demixed = "seperated out largest mixture component"
     added_random_3d_conformer = "3d conformer added to compound"
     label_made_numeric = "label made numeric"
-    label_made_binary = "label made binary"
+    digitized_label = "digitized label"
+    binarize_label = "binarize label"

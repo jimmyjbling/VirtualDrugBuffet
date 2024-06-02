@@ -88,6 +88,9 @@ class CurationWorkflow(BaseEstimator, TransformerMixin, Step):
 
         _missing_deps = set.union(*[_step.missing_dependency(self._steps) for _step in self._steps])
 
+        if self._use_mols:
+            _missing_deps = _missing_deps - {"CurateValid"}
+
         # handle dependencies first
         if len(_missing_deps) > 0:
             if correct_broken:
@@ -174,7 +177,7 @@ class CurationWorkflow(BaseEstimator, TransformerMixin, Step):
 
         self._report.set_size(len(X))
         for _step in self._steps:
-            _mask, X, y = _step(X=X, y=y)  # do the step
+            _mask, X, y = _step(molecules=X, y=y)  # do the step
             self._logger.info(f"{len(X) - np.sum(_mask)} compounds failed step {str(_step)}")
             self._report.add_step(_step, _mask)
             _overall_mask = np.all((_overall_mask, _mask), axis=0)  # update the overall mask

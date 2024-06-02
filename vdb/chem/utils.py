@@ -184,7 +184,7 @@ def add_hydrogen(mol: Mol or None) -> Mol or None:
     return AddHs(mol)
 
 
-def remove_stereochem(mol: Mol or None) -> None:
+def remove_stereochem(mol: Mol or None) -> bool:
     """
     Given a Mol, return a remove stereochemistry (chirality) inplace
 
@@ -198,8 +198,9 @@ def remove_stereochem(mol: Mol or None) -> None:
     None
     """
     if mol is None:
-        return None
+        return False
     RemoveStereochemistry(mol)
+    return True
 
 
 def sanitize_mol(mol: Mol or None) -> Mol or None:
@@ -345,7 +346,7 @@ def atomize_smiles(smi: str) -> list[str]:
     return [re.sub(f"[^a-zA-Z]", "", _) for _ in _tokens]
 
 
-def neutralize_mol(mol: Mol or None) -> None:
+def neutralize_mol(mol: Mol or None) -> bool:
     """
     Removes any neutralize-able charge on the molecule in place.
     See https://www.rdkit.org/docs/Cookbook.html#neutralizing-molecules
@@ -364,7 +365,7 @@ def neutralize_mol(mol: Mol or None) -> None:
     None
     """
     if mol is None:
-        return None
+        return False
     pattern = MolFromSmarts("[+1!h0!$([*]~[-1,-2,-3,-4]),$([!B&-1])!$([*]~[+1,+2,+3,+4])]")
     at_matches = mol.GetSubstructMatches(pattern)
     at_matches_list = [y[0] for y in at_matches]
@@ -376,9 +377,10 @@ def neutralize_mol(mol: Mol or None) -> None:
             atom.SetFormalCharge(0)
             atom.SetNumExplicitHs(h_count - chg)
             atom.UpdatePropertyCache()
+    return True
 
 
-def neutralize_smi(smi: str or object or None) -> None:
+def neutralize_smi(smi: str or object or None) -> bool:
     """
     Neutralizes a passed SMILES (or object with `.smiles` attribute)
 
@@ -441,7 +443,7 @@ def remove_Hs(mol: Mol or None, remove_zero_degree: bool = True) -> Mol or None:
     if mol is None:
         return None
     params = RemoveHsParameters()
-    params.removeDegreeZero = True
+    params.removeDegreeZero = remove_zero_degree
     mol_nohs = RemoveHs(mol, params)
     return mol_nohs
 

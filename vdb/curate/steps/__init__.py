@@ -9,7 +9,8 @@ from .flatten import CurateFlatten
 from .valid_mol import CurateValid
 from .inorganic import CurateInorganic
 from .mixture import CurateMixtures, CurateDemix
-from .label import CurateRemoveMissingLabel, CurateMakeNumericLabel
+from .label import (CurateStandardizeNumericalLabels, CurateStandardizeCategoricalLabels, CurateBinarizeLabel,
+                    CurateDigitizeLabel, CurateMakeLabelNumeric, CurateFilterLabel)
 from .neutralize import CurateNeutralize
 from .sanitize import CurateSanitize
 from .mw import CurateMW
@@ -43,8 +44,12 @@ __all__ = [
     "CurateRemoveDisagreeingDuplicatesStd",
     "CurateRemoveDisagreeingDuplicatesMinMax",
     "CurateRemoveDuplicatesGreedy",
-    "CurateRemoveMissingLabel",
-    "CurateMakeNumericLabel",
+    "CurateStandardizeCategoricalLabels",
+    "CurateStandardizeNumericalLabels",
+    "CurateMakeLabelNumeric",
+    "CurateFilterLabel",
+    "CurateBinarizeLabel",
+    "CurateDigitizeLabel",
     "CurateMW",
     "get_curation_step",
     "DEFAULT_CURATION_STEPS"

@@ -21,7 +21,6 @@ with open("./data/BBBP.csv", "r") as f:
         TEST_LABELS.append(int(splits[2]))
         TEST_MOLS.append(MolFromSmiles(splits[3]))
 
-
 DUMMY_DUP_SMILES = ["CCCC", "CCCC", "CCCC", "CCCC", "CCO", "CCCO", "CCCC", "CCO", "CCO"]
 DUMMY_DUP_MOLS = [MolFromSmiles(_) for _ in DUMMY_DUP_SMILES]
 DUMMY_DUP_LABELS = [1, 1, 1, 1, 4.4, 2.1, 0, np.nan, 100]
@@ -34,12 +33,12 @@ class TestCurationWorkflow(unittest.TestCase):
 
     def test_missing_deps(self):
         with self.assertRaises(CurationWorkflowError):
-            workflow = CurationWorkflow(DEFAULT_CURATION_STEPS+[CurateRemoveDisagreeingDuplicatesStd()],
+            workflow = CurationWorkflow(DEFAULT_CURATION_STEPS + [CurateRemoveDisagreeingDuplicatesStd()],
                                         correct_broken=False, do_logging=False)
 
     def test_fix_missing_deps(self):
         workflow = CurationWorkflow([CurateValid(), CurateRemoveDisagreeingDuplicatesStd()], do_logging=False)
-        self.assertEquals(workflow._steps[1], CurateMakeNumericLabel())
+        self.assertEquals(workflow._steps[1], CurateStandardizeNumericalLabels())
 
     def test_optimize_order(self):
         workflow = CurationWorkflow([CurateValid(), CurateCanonicalize(), CurateDemix()], do_logging=False)
@@ -49,16 +48,18 @@ class TestCurationWorkflow(unittest.TestCase):
     def test_valid_not_first(self):
         with self.assertRaises(CurationWorkflowError):
             workflow = CurationWorkflow([CurateCanonicalize(), CurateDemix()], correct_broken=False, do_logging=False)
-        workflow = CurationWorkflow([CurateCanonicalize(), CurateDemix()], correct_broken=False, use_mols=True, do_logging=False)
+        workflow = CurationWorkflow([CurateCanonicalize(), CurateDemix()], correct_broken=False, use_mols=True,
+                                    do_logging=False)
 
     def test_fix_missing_valid(self):
         workflow = CurationWorkflow([CurateCanonicalize(), CurateDemix()], correct_broken=True, do_logging=False)
         self.assertEqual(workflow._steps[0], CurateValid())
-        workflow = CurationWorkflow([CurateCanonicalize(), CurateDemix()], correct_broken=True, use_mols=True, do_logging=False)
+        workflow = CurationWorkflow([CurateCanonicalize(), CurateDemix()], correct_broken=True, use_mols=True,
+                                    do_logging=False)
         self.assertNotEqual(workflow._steps[0], CurateValid())
 
     def test_requires_y(self):
-        workflow = CurationWorkflow([CurateCanonicalize(), CurateDemix(), CurateMakeNumericLabel()], do_logging=False)
+        workflow = CurationWorkflow([CurateCanonicalize(), CurateDemix(), CurateMakeLabelNumeric()], do_logging=False)
         self.assertTrue(workflow._requires_y)
         workflow = CurationWorkflow([CurateCanonicalize(), CurateDemix()], do_logging=False)
         self.assertFalse(workflow._requires_y)
@@ -84,17 +85,17 @@ class TestCurationWorkflow(unittest.TestCase):
         workflow = CurationWorkflow(DEFAULT_CURATION_STEPS, do_logging=False)
         X, y, mask = workflow.run_workflow(np.array(TEST_SMILES), np.array(TEST_LABELS))
         _, _num_removed = workflow._report._dictionary.gather_issue_counter()
-        self.assertEqual(_num_removed, len(mask)-mask.sum())
+        self.assertEqual(_num_removed, len(mask) - mask.sum())
         _, _num_altered = workflow._report._dictionary.gather_note_counter()
         self.assertEqual(_num_altered, mask.sum())
-        self.assertEqual(_num_removed+_num_altered, len(mask))
+        self.assertEqual(_num_removed + _num_altered, len(mask))
 
 
 class TestCurationSteps(unittest.TestCase):
     def test_Add3D(self):
         _curate_function = CurateAdd3D()
         mask, X, y = _curate_function(TEST_MOLS[:10], TEST_LABELS[:10])
-        self.assertEqual(TEST_LABELS[:10], y)
+        self.assertEqual(TEST_LABELS[:10], y.flatten().tolist())
         self.assertEqual(len(mask), len(X))
         self.assertEqual(len(TEST_MOLS[:10]), len(X))
         self.assertEqual(len(TEST_MOLS[:10]), len(mask))
@@ -102,7 +103,7 @@ class TestCurationSteps(unittest.TestCase):
     def test_AddHs(self):
         _curate_function = CurateAddH()
         mask, X, y = _curate_function(TEST_MOLS, TEST_LABELS)
-        self.assertEqual(TEST_LABELS, y)
+        self.assertEqual(TEST_LABELS, y.flatten().tolist())
         self.assertEqual(len(mask), len(X))
         self.assertEqual(len(TEST_MOLS), len(X))
         self.assertEqual(len(TEST_MOLS), len(mask))
@@ -110,7 +111,7 @@ class TestCurationSteps(unittest.TestCase):
     def test_Boron(self):
         _curate_function = CurateBoron()
         mask, X, y = _curate_function(TEST_MOLS, TEST_LABELS)
-        self.assertEqual(TEST_LABELS, y)
+        self.assertEqual(TEST_LABELS, y.flatten().tolist())
         self.assertEqual(len(mask), len(X))
         self.assertEqual(len(TEST_MOLS), len(X))
         self.assertEqual(len(TEST_MOLS), len(mask))
@@ -118,7 +119,7 @@ class TestCurationSteps(unittest.TestCase):
     def test_MW(self):
         _curate_function = CurateMW()
         mask, X, y = _curate_function(TEST_MOLS, TEST_LABELS)
-        self.assertEqual(TEST_LABELS, y)
+        self.assertEqual(TEST_LABELS, y.flatten().tolist())
         self.assertEqual(len(mask), len(X))
         self.assertEqual(len(TEST_MOLS), len(X))
         self.assertEqual(len(TEST_MOLS), len(mask))
@@ -139,7 +140,7 @@ class TestCurationSteps(unittest.TestCase):
     def test_Canonicalize(self):
         _curate_function = CurateCanonicalize()
         mask, X, y = _curate_function(TEST_MOLS, TEST_LABELS)
-        self.assertEqual(TEST_LABELS, y)
+        self.assertEqual(TEST_LABELS, y.flatten().tolist())
         self.assertEqual(len(mask), len(X))
         self.assertEqual(len(TEST_MOLS), len(X))
         self.assertEqual(len(TEST_MOLS), len(mask))
@@ -148,7 +149,7 @@ class TestCurationSteps(unittest.TestCase):
     def test_DupDisagree(self):
         _curate_function = CurateRemoveDuplicates()
         mask, X, y = _curate_function(TEST_MOLS, TEST_LABELS)
-        self.assertEqual(TEST_LABELS, y)
+        self.assertEqual(TEST_LABELS, y.flatten().tolist())
         self.assertEqual(len(mask), len(X))
         self.assertEqual(len(TEST_MOLS), len(X))
         self.assertEqual(len(TEST_MOLS), len(mask))
@@ -159,7 +160,7 @@ class TestCurationSteps(unittest.TestCase):
     def test_DupDisagreeGreedy(self):
         _curate_function = CurateRemoveDuplicatesGreedy()
         mask, X, y = _curate_function(TEST_MOLS, TEST_LABELS)
-        self.assertEqual(TEST_LABELS, y)
+        self.assertEqual(TEST_LABELS, y.flatten().tolist())
         self.assertEqual(len(mask), len(X))
         self.assertEqual(len(TEST_MOLS), len(X))
         self.assertEqual(len(TEST_MOLS), len(mask))
@@ -179,17 +180,17 @@ class TestCurationSteps(unittest.TestCase):
         _curate_function = CurateRemoveDisagreeingDuplicatesCategorical(threshold=0.75)
         mask, X, y = _curate_function(DUMMY_DUP_MOLS, DUMMY_CAT_LABELS)
         self.assertEqual(mask.tolist(), [True, False, False, False, False, True, False, False, False])
-        self.assertEqual(np.sum(y == np.array(["Y", "Y", "Y", "Y", "0", "Y", "Y", "0", np.nan])), 8)
+        self.assertEqual(np.sum(y.flatten() == np.array(["Y", "Y", "Y", "Y", "0", "Y", "Y", "0", np.nan])), 9)
 
         _curate_function = CurateRemoveDisagreeingDuplicatesCategorical(threshold=1.01)
         mask, X, y = _curate_function(DUMMY_DUP_MOLS, DUMMY_CAT_LABELS)
         self.assertEqual(mask.tolist(), [False, False, False, False, False, True, False, False, False])
-        self.assertEqual(np.sum(y == DUMMY_CAT_LABELS), 8)
+        self.assertEqual(np.sum(y.flatten() == DUMMY_CAT_LABELS), 9)
 
         _curate_function = CurateRemoveDisagreeingDuplicatesCategorical(threshold=0.01)
         mask, X, y = _curate_function(DUMMY_DUP_MOLS, DUMMY_CAT_LABELS)
         self.assertEqual(mask.tolist(), [True, False, False, False, True, True, False, False, False])
-        self.assertEqual(y.tolist(), ["Y", "Y", "Y", "Y", "0", "Y", "Y", "0", "0"])
+        self.assertEqual(y.flatten().tolist(), ["Y", "Y", "Y", "Y", "0", "Y", "Y", "0", "0"])
 
     def test_DupDisagreeStd(self):
         _curate_function = CurateRemoveDisagreeingDuplicatesStd(threshold=0.5)
@@ -203,18 +204,19 @@ class TestCurationSteps(unittest.TestCase):
         _curate_function = CurateRemoveDisagreeingDuplicatesStd(threshold=0.5)
         mask, X, y = _curate_function(DUMMY_DUP_MOLS, DUMMY_DUP_LABELS)
         self.assertEqual(mask.tolist(), [True, False, False, False, False, True, False, False, False])
-        self.assertEqual(y.tolist(), [0.8, 0.8, 0.8, 0.8, 4.4, 2.1, 0.8, np.nan, 100])
+        self.assertEqual(np.nan_to_num(y.flatten(), copy=False, nan=0).tolist(),
+                         [0.8, 0.8, 0.8, 0.8, 4.4, 2.1, 0.8, 0, 100])
 
         _curate_function = CurateRemoveDisagreeingDuplicatesStd(threshold=0.01)
         mask, X, y = _curate_function(DUMMY_DUP_MOLS, DUMMY_DUP_LABELS)
         self.assertEqual(mask.tolist(), [False, False, False, False, False, True, False, False, False])
-        self.assertEqual(y.tolist(), DUMMY_DUP_LABELS)
+        self.assertEqual(np.nan_to_num(y.flatten(), copy=False, nan=-1).tolist(), [1, 1, 1, 1, 4.4, 2.1, 0, -1, 100])
 
         _curate_function = CurateRemoveDisagreeingDuplicatesStd(threshold=100)
         mask, X, y = _curate_function(DUMMY_DUP_MOLS, DUMMY_DUP_LABELS)
         self.assertEqual(mask.tolist(), [True, False, False, False, True, True, False, False, False])
-        self.assertEqual(y.tolist(), [0.8, 0.8, 0.8, 0.8, np.mean([4.4, 100]), 2.1, 0.8,
-                                      np.mean([4.4, 100]), np.mean([4.4, 100])])
+        self.assertEqual(y.flatten().tolist(), [0.8, 0.8, 0.8, 0.8, np.mean([4.4, 100]), 2.1, 0.8,
+                                                np.mean([4.4, 100]), np.mean([4.4, 100])])
 
     def test_DupDisagreeMinMax(self):
         _curate_function = CurateRemoveDisagreeingDuplicatesMinMax(threshold=0.5)
@@ -228,23 +230,24 @@ class TestCurationSteps(unittest.TestCase):
         _curate_function = CurateRemoveDisagreeingDuplicatesMinMax(threshold=2)
         mask, X, y = _curate_function(DUMMY_DUP_MOLS, DUMMY_DUP_LABELS)
         self.assertEqual(mask.tolist(), [True, False, False, False, False, True, False, False, False])
-        self.assertEqual(y.tolist(), [0.8, 0.8, 0.8, 0.8, 4.4, 2.1, 0.8, np.nan, 100])
+        self.assertEqual(np.nan_to_num(y.flatten(), copy=False, nan=-1).tolist(),
+                         [0.8, 0.8, 0.8, 0.8, 4.4, 2.1, 0.8, -1, 100])
 
         _curate_function = CurateRemoveDisagreeingDuplicatesMinMax(threshold=0.01)
         mask, X, y = _curate_function(DUMMY_DUP_MOLS, DUMMY_DUP_LABELS)
         self.assertEqual(mask.tolist(), [False, False, False, False, False, True, False, False, False])
-        self.assertEqual(y.tolist(), DUMMY_DUP_LABELS)
+        self.assertEqual(np.nan_to_num(y.flatten(), copy=False, nan=-1).tolist(), [1, 1, 1, 1, 4.4, 2.1, 0, -1, 100])
 
         _curate_function = CurateRemoveDisagreeingDuplicatesMinMax(threshold=100)
         mask, X, y = _curate_function(DUMMY_DUP_MOLS, DUMMY_DUP_LABELS)
         self.assertEqual(mask.tolist(), [True, False, False, False, True, True, False, False, False])
-        self.assertEqual(y.tolist(),[0.8, 0.8, 0.8, 0.8, np.mean([4.4, 100]), 2.1, 0.8,
-                                      np.mean([4.4, 100]), np.mean([4.4, 100])])
+        self.assertEqual(y.flatten().tolist(), [0.8, 0.8, 0.8, 0.8, np.mean([4.4, 100]), 2.1, 0.8,
+                                                np.mean([4.4, 100]), np.mean([4.4, 100])])
 
     def test_Flatten(self):
         _curate_function = CurateFlatten()
         mask, X, y = _curate_function(TEST_MOLS, TEST_LABELS)
-        self.assertEqual(TEST_LABELS, y)
+        self.assertEqual(TEST_LABELS, y.flatten().tolist())
         self.assertEqual(len(mask), len(X))
         self.assertEqual(len(TEST_MOLS), len(X))
         self.assertEqual(len(TEST_MOLS), len(mask))
@@ -252,7 +255,7 @@ class TestCurationSteps(unittest.TestCase):
     def test_Inorganic(self):
         _curate_function = CurateInorganic()
         mask, X, y = _curate_function(TEST_MOLS, TEST_LABELS)
-        self.assertEqual(TEST_LABELS, y)
+        self.assertEqual(TEST_LABELS, y.flatten().tolist())
         self.assertEqual(len(mask), len(X))
         self.assertEqual(len(TEST_MOLS), len(X))
         self.assertEqual(len(TEST_MOLS), len(mask))
@@ -260,14 +263,14 @@ class TestCurationSteps(unittest.TestCase):
     def test_Mixture(self):
         _curate_function = CurateMixtures()
         mask, X, y = _curate_function(TEST_MOLS, TEST_LABELS)
-        self.assertEqual(TEST_LABELS, y)
+        self.assertEqual(TEST_LABELS, y.flatten().tolist())
         self.assertEqual(len(mask), len(X))
         self.assertEqual(len(TEST_MOLS), len(X))
         self.assertEqual(len(TEST_MOLS), len(mask))
 
         dummy_smiles = ["[Cl-].[H+]", "c1ccccc1.[NH2+]"]
         dummy_mols = [MolFromSmiles(_) for _ in dummy_smiles]
-        dummy_labels = [1,1]
+        dummy_labels = [1, 1]
         mask, X, y = _curate_function(dummy_mols, dummy_labels)
         self.assertEqual([True, False], mask.tolist())
         self.assertEqual(MolToSmiles(X[0]), "[Cl-]")
@@ -275,14 +278,14 @@ class TestCurationSteps(unittest.TestCase):
     def test_demixture(self):
         _curate_function = CurateDemix()
         mask, X, y = _curate_function(TEST_MOLS, TEST_LABELS)
-        self.assertEqual(TEST_LABELS, y)
+        self.assertEqual(TEST_LABELS, y.flatten().tolist())
         self.assertEqual(len(mask), len(X))
         self.assertEqual(len(TEST_MOLS), len(X))
         self.assertEqual(len(TEST_MOLS), len(mask))
 
         dummy_smiles = ["[Cl-].[H+]", "c1ccccc1.[NH2+]", "hello"]
         dummy_mols = [MolFromSmiles(_) for _ in dummy_smiles]
-        dummy_labels = [1,1, 1]
+        dummy_labels = [1, 1, 1]
         mask, X, y = _curate_function(dummy_mols, dummy_labels)
         self.assertEqual([True, True, False], mask.tolist())
         self.assertEqual(MolToSmiles(X[0]), "[Cl-]")
@@ -291,7 +294,7 @@ class TestCurationSteps(unittest.TestCase):
     def test_Neutralize(self):
         _curate_function = CurateNeutralize()
         mask, X, y = _curate_function(TEST_MOLS, TEST_LABELS)
-        self.assertEqual(TEST_LABELS, y)
+        self.assertEqual(TEST_LABELS, y.flatten().tolist())
         self.assertEqual(len(mask), len(X))
         self.assertEqual(len(TEST_MOLS), len(X))
         self.assertEqual(len(TEST_MOLS), len(mask))
@@ -299,7 +302,7 @@ class TestCurationSteps(unittest.TestCase):
     def test_Sanitize(self):
         _curate_function = CurateSanitize()
         mask, X, y = _curate_function(TEST_MOLS, TEST_LABELS)
-        self.assertEqual(TEST_LABELS, y)
+        self.assertEqual(TEST_LABELS, y.flatten().tolist())
         self.assertEqual(len(mask), len(X))
         self.assertEqual(len(TEST_MOLS), len(X))
         self.assertEqual(len(TEST_MOLS), len(mask))
@@ -307,28 +310,18 @@ class TestCurationSteps(unittest.TestCase):
     def test_Valid(self):
         _curate_function = CurateValid()
         mask, X, y = _curate_function(TEST_MOLS, TEST_LABELS)
-        self.assertEqual(TEST_LABELS, y)
+        self.assertEqual(TEST_LABELS, y.flatten().tolist())
         self.assertEqual(len(mask), len(X))
         self.assertEqual(len(TEST_MOLS), len(X))
         self.assertEqual(len(TEST_MOLS), len(mask))
         self.assertIsInstance(X[0], Mol)
 
-    def test_LabelMissing(self):
-        _curate_function = CurateRemoveMissingLabel()
+    # DUMMY_DUP_LABELS = [1, 1, 1, 1, 4.4, 2.1, 0, np.nan, 100]
+    # DUMMY_CAT_LABELS = ["Y", "Y", "Y", "Y", "0", "Y", "0", "0", np.nan]
+    def test_StandardizeNumeric(self):
+        _curate_function = CurateStandardizeNumericalLabels()
         mask, X, y = _curate_function(TEST_MOLS, TEST_LABELS)
-        self.assertEqual(TEST_LABELS, y.tolist())
-        self.assertEqual(len(mask), len(X))
-        self.assertEqual(len(TEST_MOLS), len(X))
-        self.assertEqual(len(TEST_MOLS), len(mask))
-        self.assertIsInstance(X[0], Mol)
-
-        mask, X, y = _curate_function(DUMMY_DUP_SMILES, DUMMY_CAT_LABELS)
-        self.assertEqual(mask.tolist(), [True, True, True, True, True, True, True, True, False])
-
-    def test_LabelNumeric(self):
-        _curate_function = CurateMakeNumericLabel()
-        mask, X, y = _curate_function(TEST_MOLS, TEST_LABELS)
-        self.assertEqual(TEST_LABELS, y.tolist())
+        self.assertEqual(TEST_LABELS, y.flatten().tolist())
         self.assertEqual(len(mask), len(X))
         self.assertEqual(len(TEST_MOLS), len(X))
         self.assertEqual(len(TEST_MOLS), len(mask))
@@ -336,9 +329,82 @@ class TestCurationSteps(unittest.TestCase):
 
         mask, X, y = _curate_function(DUMMY_DUP_SMILES, DUMMY_DUP_LABELS)
         self.assertEqual(mask.tolist(), [True, True, True, True, True, True, True, False, True])
+        self.assertTrue(y.dtype == "float32")
 
         mask, X, y = _curate_function(DUMMY_DUP_SMILES, DUMMY_CAT_LABELS)
         self.assertEqual(mask.tolist(), [False, False, False, False, True, False, True, True, False])
+        self.assertTrue(y.dtype == "float32")
+
+    def test_StandardizeCat(self):
+        _curate_function = CurateStandardizeCategoricalLabels(encoding_map={0: 0, 1: 1})
+        mask, X, y = _curate_function(TEST_MOLS, TEST_LABELS)
+        self.assertEqual(TEST_LABELS, y.flatten().tolist())
+        self.assertEqual(len(mask), len(X))
+        self.assertEqual(len(TEST_MOLS), len(X))
+        self.assertEqual(len(TEST_MOLS), len(mask))
+        self.assertIsInstance(X[0], Mol)
+
+        _curate_function = CurateStandardizeCategoricalLabels()
+        mask, X, y = _curate_function(DUMMY_DUP_SMILES, DUMMY_DUP_LABELS)
+        self.assertEqual(mask.tolist(), [True, True, True, True, True, True, True, False, True])
+        self.assertTrue(y.dtype == "float32")
+        self.assertEqual(np.nan_to_num(y.flatten(), True, -1).tolist(), [0, 0, 0, 0, 1, 2, 3, -1, 4])
+
+        _curate_function = CurateStandardizeCategoricalLabels()
+        mask, X, y = _curate_function(DUMMY_DUP_SMILES, DUMMY_CAT_LABELS)
+        self.assertEqual(mask.tolist(), [True, True, True, True, True, True, True, True, False])
+        self.assertTrue(y.dtype == "float32")
+        self.assertEqual(np.nan_to_num(y.flatten(), True, -1).tolist(), [0, 0, 0, 0, 1, 0, 1, 1, -1])
+
+        _curate_function = CurateStandardizeCategoricalLabels(encoding_map={"Y": 1, "0": 0})
+        mask, X, y = _curate_function(DUMMY_DUP_SMILES, DUMMY_CAT_LABELS)
+        self.assertEqual(mask.tolist(), [True, True, True, True, True, True, True, True, False])
+        self.assertTrue(y.dtype == "float32")
+        self.assertEqual(np.nan_to_num(y.flatten(), True, -1).tolist(), [1, 1, 1, 1, 0, 1, 0, 0, -1])
+
+        with self.assertRaises(CurationStepError):
+            _curate_function = CurateStandardizeCategoricalLabels(encoding_map={"Y": "A", 0: 0})
+
+    def test_Labelbinarize(self):
+        _curate_function = CurateBinarizeLabel(threshold=0.5)
+        mask, X, y = _curate_function(TEST_MOLS, TEST_LABELS)
+        self.assertEqual(TEST_LABELS, y.flatten().tolist())
+        self.assertEqual(len(mask), len(X))
+        self.assertEqual(len(TEST_MOLS), len(X))
+        self.assertEqual(len(TEST_MOLS), len(mask))
+        self.assertIsInstance(X[0], Mol)
+
+        _curate_function = CurateBinarizeLabel(threshold=2)
+        mask, X, y = _curate_function(DUMMY_DUP_SMILES, DUMMY_DUP_LABELS)
+        self.assertEqual(y[mask].flatten().tolist(), [0, 0, 0, 0, 1, 1, 0, 1])
+        self.assertEqual(mask.tolist(), [True, True, True, True, True, True, True, False, True])
+
+        _curate_function = CurateBinarizeLabel(threshold=2, greater=False)
+        mask, X, y = _curate_function(DUMMY_DUP_SMILES, DUMMY_DUP_LABELS)
+        self.assertEqual(y[mask].flatten().tolist(), [1, 1, 1, 1, 0, 0, 1, 0])
+        self.assertEqual(mask.tolist(), [True, True, True, True, True, True, True, False, True])
+
+    def test_LabelDigitize(self):
+        _curate_function = CurateDigitizeLabel(thresholds=[0.5])
+        mask, X, y = _curate_function(TEST_MOLS, TEST_LABELS)
+        self.assertEqual(TEST_LABELS, y.flatten().tolist())
+        self.assertEqual(len(mask), len(X))
+        self.assertEqual(len(TEST_MOLS), len(X))
+        self.assertEqual(len(TEST_MOLS), len(mask))
+        self.assertIsInstance(X[0], Mol)
+
+        _curate_function = CurateDigitizeLabel(thresholds=[0.5, 2, 3, 5])
+        mask, X, y = _curate_function(DUMMY_DUP_SMILES, DUMMY_DUP_LABELS)
+        self.assertEqual(y[mask].flatten().tolist(), [1, 1, 1, 1, 3, 2, 0, 4])
+        self.assertEqual(mask.tolist(), [True, True, True, True, True, True, True, False, True])
+
+        _curate_function = CurateDigitizeLabel(thresholds=[0.5, 2, 3, 5], greater=False)
+        mask, X, y = _curate_function(DUMMY_DUP_SMILES, DUMMY_DUP_LABELS)
+        self.assertEqual(y[mask].flatten().tolist(), [3, 3, 3, 3, 1, 2, 4, 0])
+        self.assertEqual(mask.tolist(), [True, True, True, True, True, True, True, False, True])
+
+        with self.assertRaises(CurationStepError):
+            CurateDigitizeLabel(thresholds=[1.0, 0.5])
 
 
 if __name__ == '__main__':

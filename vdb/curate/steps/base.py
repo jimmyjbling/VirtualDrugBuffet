@@ -24,18 +24,18 @@ class CurationStep(abc.ABC, Step):
      compatible API.
 
     CurationSteps must implement 2 methods:
-        1. _func(self, X, y, **kwargs) -> mask: NDArray, new_X: NDarray, new_y: NDarray
+        1. _func(self, molecules, y, **kwargs) -> mask: NDArray, new_X: NDarray, new_y: NDarray
             - This function is what will be called for the main curation
               It should return a boolean mask defining which inputs pass (True) or failed (False) the curation step
               All CurationSteps operate on rdkit.Mol objects (except of the CurateValid function, which is used to
-               start the conversion from SMILES to mols) so X should be an array of rdkit.Mol objects
+               start the conversion from SMILES to mols) so molecules should be an array of rdkit.Mol objects
               It should be able to handle None or np.nan objects (and of course rdkit.Mol objects)
-              The shape of the mask return must match the shape of X (input)
+              The shape of the mask return must match the shape of molecules (input)
               y is for any function that might need to use a label or extra column when curating
                (the CurateRemoveDisagreeingDuplicates is an example of this)
                y is generally the class or regression value and will always be passes, even if it isn't used
-              If the Mol objects changed out-of-place, the new mols should be return as an array the same shape as X
-               if Mols are not changed or changed in-place, return the input X
+              If the Mol objects changed out-of-place, the new mols should be return as an array the same shape as molecules
+               if Mols are not changed or changed in-place, return the input molecules
               The above is same for y (labels) as well
         2. get_rank() -> int
             - This function is used to determine when this CurationStep should occur with respect to other steps.
@@ -66,15 +66,13 @@ class CurationStep(abc.ABC, Step):
 
     Lastly, some CurationSteps require an explict dependency before it can be used. A notable example is
      CurateRemoveDisagreeingDuplicatesMinMax, which requires that labels are numeric. Thus, it requires that the
-     CurationStep `CurateMakeNumericLabel` is run before it. To help a user understand these dependencies all
+     CurationStep `CurateStandardizeLabels` is run before it. To help a user understand these dependencies all
      CurationSteps have a `self.dependency` attribute that includes the `__name__` attribute of any CurationStep class
      that it is dependent on. There is also a `self.missing_dependency()` function that, when passed a list of step,
      will return [] if the passed list of steps satisfies all dependency, otherwise it returns all missing dependencies
 
     Attributes
     ----------
-    func_args: dict, default {}
-        a dictionary of passed kwargs during construction that holds function arguments
     issue: CurationIssue, default None
         the associated curation issue to attached to mol that gets flagged (None if no flagging occurs)
     note: CurationNote, default None
@@ -84,8 +82,7 @@ class CurationStep(abc.ABC, Step):
     dependency: set[str], default []
         the set of __name__ attributes for the CurationSteps this CurationStep is dependent on
     """
-    def __init__(self, **kwargs):
-        self.func_args: dict = kwargs
+    def __init__(self):
         self.issue: CurationNote or None = None
         self.note: CurationIssue or None = None
         self.requires_y: bool = False
@@ -93,11 +90,11 @@ class CurationStep(abc.ABC, Step):
         self.dependency: set[str] = set()
 
     @abc.abstractmethod
-    def _func(self, X, y, **kwargs) -> tuple[npt.NDArray, npt.NDArray, npt.NDArray]:
+    def _func(self, molecules, y) -> tuple[npt.NDArray, npt.NDArray, npt.NDArray]:
         raise NotImplemented
 
-    def __call__(self, X, y=None) -> tuple[npt.NDArray, npt.NDArray, npt.NDArray]:
-        return self._func(X, y, **self.func_args)
+    def __call__(self, molecules, y=None) -> tuple[npt.NDArray, npt.NDArray, npt.NDArray]:
+        return self._func(molecules, y)
 
     def __str__(self):
         return str(self.__class__.__name__)
