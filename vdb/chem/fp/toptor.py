@@ -13,8 +13,8 @@ class TopTor(RDKitFPFunc, DiscreteFPFunc):
 
     """
 
-    def __init__(self):
-        super().__init__(**{"nBits": 2048})
+    def __init__(self, use_tqdm: bool = False):
+        super().__init__(**{"nBits": 2048, "use_tqdm": use_tqdm})
 
         self._func = RdkitWrapper("GetHashedTopologicalTorsionFingerprint", "rdkit.Chem.AllChem", **self._kwargs)
         self._dimension = 2048
@@ -31,8 +31,8 @@ class BinaryTopTor(RDKitFPFunc, BinaryFPFunc):
 
     """
 
-    def __init__(self):
-        super().__init__(**{"nBits": 2048})
+    def __init__(self, use_tqdm: bool = False):
+        super().__init__(**{"nBits": 2048, "use_tqdm": use_tqdm})
 
         self._func = RdkitWrapper("GetHashedTopologicalTorsionFingerprintAsBitVect", "rdkit.Chem.AllChem", **self._kwargs)
         self._dimension = 2048

@@ -13,8 +13,8 @@ class RDK(RDKitFPFunc, BinaryFPFunc):
 
     """
 
-    def __init__(self):
-        super().__init__(**{"fpSize": 2048})
+    def __init__(self, use_tqdm: bool = False):
+        super().__init__(**{"fpSize": 2048, "use_tqdm": use_tqdm})
 
         self._func = RdkitWrapper("RDKFingerprint", "rdkit.Chem", **self._kwargs)
         self._dimension = 2048

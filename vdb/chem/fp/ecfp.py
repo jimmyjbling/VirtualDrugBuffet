@@ -12,8 +12,8 @@ class ECFP4(RDKitFPFunc, DiscreteFPFunc):
     All settings and attributes are preset during the instantiation of the object.
 
     """
-    def __init__(self):
-        super().__init__(**{"radius": 2, "nBits": 2048, "useFeatures": False})
+    def __init__(self, use_tqdm: bool = False):
+        super().__init__(**{"radius": 2, "nBits": 2048, "useFeatures": False, "use_tqdm": use_tqdm})
 
         self._func = RdkitWrapper("GetHashedMorganFingerprint", "rdkit.Chem.AllChem", **self._kwargs)
         self._dimension = 2048
@@ -30,8 +30,8 @@ class ECFP6(RDKitFPFunc, DiscreteFPFunc):
 
     """
 
-    def __init__(self):
-        super().__init__(**{"radius": 3, "nBits": 2048, "useFeatures": False})
+    def __init__(self, use_tqdm: bool = False):
+        super().__init__(**{"radius": 3, "nBits": 2048, "useFeatures": False, "use_tqdm": use_tqdm})
 
         self._func = RdkitWrapper("GetHashedMorganFingerprint", "rdkit.Chem.AllChem", **self._kwargs)
         self._dimension = 2048
@@ -48,8 +48,8 @@ class BinaryECFP4(RDKitFPFunc, BinaryFPFunc):
 
     """
 
-    def __init__(self):
-        super().__init__(**{"radius": 4, "nBits": 2048, "useFeatures": False})
+    def __init__(self, use_tqdm: bool = False):
+        super().__init__(**{"radius": 4, "nBits": 2048, "useFeatures": False, "use_tqdm": use_tqdm})
 
         self._func = RdkitWrapper("GetMorganFingerprintAsBitVect", "rdkit.Chem.AllChem", **self._kwargs)
         self._dimension = 2048
@@ -66,8 +66,8 @@ class BinaryECFP6(RDKitFPFunc, BinaryFPFunc):
 
     """
 
-    def __init__(self):
-        super().__init__(**{"radius": 3, "nBits": 2048, "useFeatures": False})
+    def __init__(self, use_tqdm: bool = False):
+        super().__init__(**{"radius": 3, "nBits": 2048, "useFeatures": False, "use_tqdm": use_tqdm})
 
         self._func = RdkitWrapper("GetMorganFingerprintAsBitVect", "rdkit.Chem.AllChem", **self._kwargs)
         self._dimension = 2048

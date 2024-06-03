@@ -15,7 +15,7 @@ from vdb.chem.utils import to_mol
 from vdb.utils import isnan
 
 
-def _handle_fail_nan(fp_func: Callable, dimensions: int = 1, *args, **kwargs):
+def _handle_fail_nan(fp_func: Callable, dimensions: int = 1, return_none: bool = False, *args, **kwargs):
     """
     Wraps an FP func and returns a vector of `np.nan` if it fails for any reason
 
@@ -36,7 +36,10 @@ def _handle_fail_nan(fp_func: Callable, dimensions: int = 1, *args, **kwargs):
     try:
         return fp_func(*args, **kwargs)
     except Exception:  # just means function failed for some reason, so give it a None
-        return [np.nan]*dimensions
+        if return_none:
+            return None
+        else:
+            return [np.nan]*dimensions
 
 
 class BaseFPFunc(BaseEstimator, TransformerMixin, Step):
@@ -129,7 +132,7 @@ class BaseFPFunc(BaseEstimator, TransformerMixin, Step):
 
         # loop through all the smiles and call the fp func
         if nan_on_fail:
-            _tmp = [_handle_fail_nan(self._func, self._dimension, s) for s in
+            _tmp = [_handle_fail_nan(self._func, self._dimension, False, s) for s in
                     tqdm(smis, disable=not self.use_tqdm, desc="fingerprinting")]
         else:
             _tmp = [self._func(s) for s in tqdm(smis, disable=not self.use_tqdm, desc="fingerprinting")]
@@ -150,7 +153,7 @@ class BaseFPFunc(BaseEstimator, TransformerMixin, Step):
         return self.transform(X, y)
 
     def transform(self, X, y=None):
-        return self.generate_fps(X)[0]
+        return self.generate_fps(X)
 
     def get_feature_names_out(self, input_features=None):
         return np.array([f"{self.__name__}_{i+1}" for i in range(self._dimension)])
@@ -231,7 +234,7 @@ class RDKitFPFunc(BaseFPFunc):
         """
         _block = BlockLogs()
         smis = np.atleast_1d(smis)
-        return [self._func(m, as_list=False) if m else None for m in
+        return [_handle_fail_nan(self._func, 1, True, m, as_list=False) if m else None for m in
                 tqdm(smis, disable=not self.use_tqdm, desc="making rdkit fingerprints")]
 
 

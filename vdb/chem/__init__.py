@@ -31,5 +31,5 @@ __all__ = [
     "to_smis",
     "atomize_smiles",
     "remove_Hs",
-    "get_mw"
+    "get_mw",
 ]

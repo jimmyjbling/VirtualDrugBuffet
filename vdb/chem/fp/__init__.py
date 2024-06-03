@@ -19,7 +19,14 @@ from .base import BaseFPFunc
 
 
 def get_fp_func(class_name: str, **kwargs) -> BaseFPFunc:
-    return globals()[class_name](**kwargs)
+    _class = globals().get(class_name)
+    if _class:
+        return _class(**kwargs)
+    raise FPFuncError(f"cannot find FPFunc {class_name}")
+
+
+class FPFuncError(Exception):
+    pass
 
 
 __all__ = [
@@ -30,7 +37,7 @@ __all__ = [
     "BinaryECFP6",
     "FCFP4",
     "BinaryFCFP4",
-    "FCFP4",
+    "FCFP6",
     "BinaryFCFP6",
     "AtomPair",
     "BinaryAtomPair",
@@ -40,5 +47,6 @@ __all__ = [
     "BinaryTopTor",
     "MACCS",
     "RDK",
-    "get_fp_func"
+    "get_fp_func",
+    "FPFuncError"
 ]

@@ -13,8 +13,8 @@ class AtomPair(RDKitFPFunc, DiscreteFPFunc):
 
     """
 
-    def __init__(self):
-        super().__init__(**{"nBits": 2048})
+    def __init__(self, use_tqdm: bool = False):
+        super().__init__(**{"nBits": 2048, "use_tqdm": use_tqdm})
 
         self._func = RdkitWrapper("GetHashedAtomPairFingerprint", "rdkit.Chem.rdMolDescriptors", **self._kwargs)
         self._dimension = 2048
@@ -31,8 +31,8 @@ class BinaryAtomPair(RDKitFPFunc, BinaryFPFunc):
 
     """
 
-    def __init__(self):
-        super().__init__(**{"nBits": 2048})
+    def __init__(self, use_tqdm: bool = False):
+        super().__init__(**{"nBits": 2048, "use_tqdm": use_tqdm})
 
         self._func = RdkitWrapper("GetHashedAtomPairFingerprintAsBitVect", "rdkit.Chem.rdMolDescriptors", **self._kwargs)
         self._dimension = 2048

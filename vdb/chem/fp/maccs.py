@@ -13,8 +13,8 @@ class MACCS(RDKitFPFunc, BinaryFPFunc):
 
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, use_tqdm: bool = False):
+        super().__init__(**{"use_tqdm": use_tqdm})
 
         self._func = RdkitWrapper("GetMACCSKeysFingerprint", "rdkit.Chem.rdMolDescriptors", **self._kwargs)
-        self._dimension = 2048
+        self._dimension = 167

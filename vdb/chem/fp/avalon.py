@@ -13,8 +13,8 @@ class Avalon(RDKitFPFunc, DiscreteFPFunc):
 
     """
 
-    def __init__(self):
-        super().__init__(**{"nBits": 2048})
+    def __init__(self, use_tqdm: bool = False):
+        super().__init__(**{"nBits": 2048, "use_tqdm": use_tqdm})
 
         self._func = RdkitWrapper("GetAvalonCountFP", "rdkit.Avalon.pyAvalonTools", **self._kwargs)
         self._dimension = 2048
@@ -31,8 +31,8 @@ class BinaryAvalon(RDKitFPFunc, BinaryFPFunc):
 
     """
 
-    def __init__(self):
-        super().__init__(**{"nBits": 2048})
+    def __init__(self, use_tqdm: bool = False):
+        super().__init__(**{"nBits": 2048, "use_tqdm": use_tqdm})
 
         self._func = RdkitWrapper("GetAvalonFP", "rdkit.Avalon.pyAvalonTools", **self._kwargs)
         self._dimension = 2048
